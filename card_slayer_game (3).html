@@ -3,1018 +3,351 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CARD SLAYER</title>
+    <title>제 아내읾...랭킹</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: #000;
-            color: #fff;
-            font-family: 'Arial', sans-serif;
-            overflow-x: hidden;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        h1 {
-            text-align: center;
-            font-size: 3em;
-            margin-bottom: 30px;
-            text-shadow: 0 0 20px #fff, 0 0 40px #0ff;
-            animation: glow 2s ease-in-out infinite alternate;
-        }
-
-        @keyframes glow {
-            from { text-shadow: 0 0 20px #fff, 0 0 40px #0ff; }
-            to { text-shadow: 0 0 30px #fff, 0 0 60px #0ff, 0 0 80px #0ff; }
-        }
-
-        .game-area {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin-bottom: 30px;
-            align-items: flex-start;
-        }
-
-        .board-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .side-panel {
-            width: 300px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .board {
-            display: grid;
-            grid-template-columns: repeat(3, 140px);
-            grid-template-rows: repeat(3, 180px);
-            gap: 8px;
-            background: #111;
-            padding: 10px;
-            border: 3px solid #333;
-            border-radius: 10px;
-        }
-
-        .cell {
-            background: #1a1a1a;
-            border: 2px solid #333;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .cell:hover:not(.occupied) {
-            background: #252525;
-            border-color: #555;
-        }
-
-        .card {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-        }
-
-        .card.player {
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-        }
-
-        .card.ai {
-            background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);
-        }
-
-        .card-stats {
-            position: absolute;
-            font-weight: bold;
-            font-size: 18px;
-            color: #fff;
-            text-shadow: 0 0 5px #000, 0 0 10px #000;
-        }
-
-        .card-top { top: 5px; }
-        .card-right { right: 5px; top: 50%; transform: translateY(-50%); }
-        .card-bottom { bottom: 5px; }
-        .card-left { left: 5px; top: 50%; transform: translateY(-50%); }
-
-        .card-emoji {
-            font-size: 48px;
-            margin: 10px 0;
-        }
-
-        .card-name {
-            font-size: 11px;
-            text-align: center;
-            padding: 0 5px;
-            font-weight: bold;
-            text-shadow: 0 0 5px #000;
-        }
-
-        .hands {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .hand-card {
-            width: 120px;
-            height: 160px;
-        }
-
-        .hand-card.selected {
-            transform: translateY(-10px);
-            box-shadow: 0 0 20px #0ff;
-        }
-
-        .buttons {
-            text-align: center;
-            margin: 30px 0;
-        }
-
-        button {
-            background: linear-gradient(135deg, #333 0%, #555 100%);
-            color: #fff;
-            border: 2px solid #666;
-            padding: 15px 30px;
-            font-size: 16px;
-            cursor: pointer;
-            border-radius: 8px;
-            margin: 0 10px;
-            transition: all 0.3s;
-            text-transform: uppercase;
-            font-weight: bold;
-        }
-
-        button:hover {
-            background: linear-gradient(135deg, #555 0%, #777 100%);
-            border-color: #888;
-            box-shadow: 0 0 20px rgba(255,255,255,0.3);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .info {
-            text-align: center;
-            font-size: 20px;
-            margin: 20px 0;
-            text-shadow: 0 0 10px #fff;
-        }
-
-        .collection {
-            background: #111;
-            border: 3px solid #333;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px 0;
-        }
-
-        .collection h2 {
-            text-align: center;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px #0ff;
-        }
-
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 15px;
-            justify-items: center;
-        }
-
-        .collection-card {
-            width: 120px;
-            height: 160px;
-            cursor: pointer;
-        }
-
-        .collection-card.selected-for-deck {
-            box-shadow: 0 0 20px #0f0;
-        }
-
-        .collection-card.selected-for-fusion {
-            box-shadow: 0 0 20px #f0f;
-        }
-
-        .rarity-normal { border: 2px solid #888; }
-        .rarity-rare { border: 2px solid #0f0; box-shadow: 0 0 10px #0f0; }
-        .rarity-epic { border: 2px solid #a855f7; box-shadow: 0 0 10px #a855f7; }
-        .rarity-legendary { border: 2px solid #fbbf24; box-shadow: 0 0 10px #fbbf24; }
-        .rarity-hero { 
-            border: 2px solid #fff;
-            box-shadow: 0 0 15px #f00, 0 0 25px #0f0, 0 0 35px #00f;
-            animation: rainbow 2s linear infinite;
-        }
-
-        @keyframes rainbow {
-            0% { box-shadow: 0 0 15px #f00, 0 0 25px #f00; }
-            33% { box-shadow: 0 0 15px #0f0, 0 0 25px #0f0; }
-            66% { box-shadow: 0 0 15px #00f, 0 0 25px #00f; }
-            100% { box-shadow: 0 0 15px #f00, 0 0 25px #f00; }
-        }
-
-        .name-normal { color: #aaa; }
-        .name-rare { color: #0f0; text-shadow: 0 0 8px #0f0; }
-        .name-epic { color: #a855f7; text-shadow: 0 0 8px #a855f7; }
-        .name-legendary { color: #fbbf24; text-shadow: 0 0 8px #fbbf24; }
-        .name-hero { 
-            background: linear-gradient(90deg, #f00, #0f0, #00f, #f00);
-            background-size: 200% 100%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: rainbow-text 2s linear infinite;
-        }
-
-        @keyframes rainbow-text {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 200% 50%; }
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background: #1a1a1a;
-            padding: 30px;
-            border-radius: 15px;
-            border: 3px solid #555;
-            max-width: 80%;
-            max-height: 80%;
-            overflow-y: auto;
-        }
-
-        .effect-text {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 80px;
-            font-weight: bold;
-            z-index: 999;
-            pointer-events: none;
-            animation: effectPop 1s ease-out forwards;
-        }
-
-        @keyframes effectPop {
-            0% { 
-                transform: translate(-50%, -50%) scale(0);
-                opacity: 0;
-            }
-            50% {
-                transform: translate(-50%, -50%) scale(1.2);
-                opacity: 1;
-            }
-            100% {
-                transform: translate(-50%, -50%) scale(1);
-                opacity: 0;
-            }
-        }
-
-        .shake {
-            animation: shake 0.5s;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
-
-        .ai-hand {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .section-title {
-            text-align: center;
-            font-size: 24px;
-            margin: 20px 0;
-            text-shadow: 0 0 10px #0ff;
-        }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; color: #333; transition: filter 0.3s; }
+        .main-content { transition: filter 0.3s; }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; padding: 20px 0; border-top: 2px solid #ccc; margin-top: 20px; }
+        .character-item { --saturation: 0; text-align: center; padding: 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s, background-color 0.5s; background-color: hsl(120, calc(20% + var(--saturation) * 30%), calc(95% - var(--saturation) * 10%)); }
+        .character-item:hover { transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); }
+        .character-img { width: 80px; height: 80px; object-fit: contain; border-radius: 4px; }
+        .char-no-data { background-color: #fff; }
+        .ranking-section { margin-bottom: 20px; background-color: #fff; padding: 12px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05); }
+        .ranking-container { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-around; }
+        .ranking-table-wrapper { flex: 1 1 300px; min-width: 280px; }
+        .ranking-table { width: 100%; border-collapse: collapse; }
+        .ranking-table th, .ranking-table td { border: 1px solid #ddd; padding: 6px; text-align: center; height: 48px; vertical-align: middle; }
+        .ranking-img { width: 40px; height: 40px; object-fit: contain; cursor: pointer; }
+        .rating-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .rating-modal.active { display: flex; }
+        .modal-content { background-color: #fff; padding: 20px; border-radius: 10px; max-width: 90%; width: 700px; max-height: 90%; overflow-y: auto; text-align: center; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); }
+        #modal-char-image { width: 150px; height: 150px; object-fit: contain; border: 2px solid #ccc; border-radius: 5px; margin-bottom: 12px; }
+        .rating-options { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+        @media (min-width: 768px) { .rating-options { flex-direction: row; justify-content: space-around; } }
+        .score-button { padding: 6px 10px; border: 1px solid #ccc; background-color: #f9f9f9; cursor: pointer; border-radius: 4px; transition: background-color 0.1s; }
+        .score-button:hover { background-color: #eee; }
+        .score-button.selected { background-color: #4CAF50; color: white; border-color: #4CAF50; }
+        .submit-button { padding: 8px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; margin-top: 12px; width: 100%; }
+        #success-message { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); z-index: 2000; background-color: rgba(76, 175, 80, 0.95); color: white; padding: 24px 48px; border-radius: 12px; font-size: 1.4em; font-weight: bold; opacity: 0; pointer-events: none; box-shadow: 0 0 30px rgba(0, 0, 0, 0.5); transition: opacity 0.3s; }
+        @keyframes pop-in { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; } 80% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
+        #success-message.show { animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; opacity: 1; }
+        .rank-info-section { margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; background-color: #f9f9f9; border-radius: 5px; }
+        .rank-info-item { margin-bottom: 4px; font-size: 0.95em; }
+        .rank-info-item strong { color: #4CAF50; }
+        .rank-info-loading { color: orange; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>⚔️ CARD SLAYER ⚔️</h1>
-        
-        <div class="info">
-            <span id="gameStatus">카드를 선택하고 보드에 배치하세요</span>
+    <div id="main-content" class="main-content">
+        <div id="ranking-section" class="ranking-section">
+            <h2 class="ranking-header">🌟 캐릭터 랭킹 (Top 20)</h2>
+            <div id="ranking-container" class="ranking-container"></div>
         </div>
 
-        <div class="game-area">
-            <div class="side-panel">
-                <div class="section-title">👤 내 패 (5장)</div>
-                <div class="hands" id="playerHand"></div>
+        <h2 style="text-align: center; margin-top: 20px; color: #555;">니케 목록</h2>
+        <div id="character-grid" class="grid-container"></div>
+    </div>
+    
+    <div id="rating-modal" class="rating-modal">
+        <div class="modal-content">
+            <h3 id="modal-char-title">캐릭터 평가</h3>
+            <img id="modal-char-image" src="" alt="캐릭터 이미지">
+            <div id="modal-rank-info" class="rank-info-section">
+                <div class="rank-info-loading">랭킹 정보 로딩 중...</div>
             </div>
-
-            <div class="board-section">
-                <div class="section-title">🎮 게임 보드</div>
-                <div class="board" id="board"></div>
-            </div>
-
-            <div class="side-panel">
-                <div class="section-title">🤖 AI 패 (5장)</div>
-                <div class="ai-hand" id="aiHand"></div>
-            </div>
-        </div>
-
-        <div class="buttons">
-            <button onclick="newGame()">🎲 새 게임</button>
-            <button onclick="showDeckBuilder()">📋 덱 구성</button>
-            <button onclick="showFusion()">⚗️ 합성</button>
-            <button onclick="showCollection()">📚 컬렉션</button>
-        </div>
-
-        <div id="deckModal" class="modal">
-            <div class="modal-content">
-                <h2>덱 구성 (5장 선택)</h2>
-                <div id="deckBuilder" class="card-grid"></div>
-                <div style="text-align: center; margin-top: 20px;">
-                    <button onclick="saveDeck()">저장</button>
-                    <button onclick="closeModal('deckModal')">취소</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="fusionModal" class="modal">
-            <div class="modal-content">
-                <h2>합성 (2장 선택)</h2>
-                <div id="fusionBuilder" class="card-grid"></div>
-                <div style="text-align: center; margin-top: 20px;">
-                    <button onclick="performFusion()">합성</button>
-                    <button onclick="closeModal('fusionModal')">취소</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="collectionModal" class="modal">
-            <div class="modal-content">
-                <h2>내 컬렉션</h2>
-                <div id="collectionView" class="card-grid"></div>
-                <div style="text-align: center; margin-top: 20px;">
-                    <button onclick="closeModal('collectionModal')">닫기</button>
-                </div>
-            </div>
+            <div id="modal-rating-options" class="rating-options"></div>
+            <button id="modal-submit-button" class="submit-button">평가 완료</button>
         </div>
     </div>
+    
+    <div id="success-message">평가 완료</div>
 
     <script>
-        const EMOJIS = ['🐉','🦁','🐺','🦅','🐯','🦈','🐍','🦂','🕷️','🦇','⚔️','🗡️','🏹','🔱','🛡️','💎','👑','🔥','⚡','❄️','🌪️','💀','👹','👺','🤖','👾','🎃','🦖','🦕','🐲','🧙','🧛','🧟','⭐','🌟','💫','🔮','🎯','🎲','🃏','💣','⚙️','🔧','🔨','⛏️','🗿','🏺','📿','🎭','🎪','🎨','🎬','🎤'];
+        const SUPABASE_URL = 'https://kitkyzypxttpuhrwxmdu.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpdGt5enlweHR0cHVocnd4bWR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0NDg0MTQsImV4cCI6MjA4MTAyNDQxNH0.b1UWX8Zw1rH7TJUnSDcSh0OpHL_qLRIDBOQQ7QzLQtU';
+        const SUPABASE_TABLE = 'ForNikkeTier';
 
-        const TITLES = ['전설의','용맹한','어둠의','빛나는','신성한','파괴의','수호의','고대의','신비한','강력한','불멸의','영광의','비밀의','운명의','마지막','최초의','영원한','저주받은','축복받은','광기의'];
-        const NAMES = ['전사','마법사','기사','암살자','사냥꾼','수호자','파괴자','지배자','군주','황제','용','악마','천사','거인','정령','드래곤','피닉스','크라켄','히드라','리바이어던'];
-
-        let playerCards = [];
-        let aiCards = [];
-        let playerDeck = [];
-        let aiDeck = [];
-        let playerHand = [];
-        let aiHand = [];
-        let board = Array(9).fill(null);
-        let selectedCard = null;
-        let currentTurn = 'player';
-        let gameOver = false;
-
-        function generateCard() {
-            const weights = [];
-            for (let s = 4; s <= 36; s++) {
-                weights.push(Math.pow(0.85, s - 4));
-            }
-            
-            let target = Math.random() * weights.reduce((a,b) => a+b, 0);
-            let sum = 4;
-            
-            for (let i = 0; i < weights.length; i++) {
-                target -= weights[i];
-                if (target <= 0) {
-                    sum = i + 4;
-                    break;
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            global: {
+                headers: {
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'apikey': SUPABASE_ANON_KEY
                 }
             }
+        });
 
-            let stats = [];
-            for (let i = 0; i < 3; i++) {
-                stats.push(Math.floor(Math.random() * 9) + 1);
-            }
-            stats.push(sum - stats.reduce((a,b) => a+b, 0));
-            
-            stats = stats.sort(() => Math.random() - 0.5);
-            stats = stats.map(s => Math.max(1, Math.min(10, s)));
+        let currentRatingCharId = null;
+        let cachedRankingData = null;
+        let cachedById = new Map();
 
-            const actualSum = stats.reduce((a,b) => a+b, 0);
-            let rarity = 'normal';
-            if (actualSum > 25) rarity = 'hero';
-            else if (actualSum > 20) rarity = 'legendary';
-            else if (actualSum > 15) rarity = 'epic';
-            else if (actualSum > 10) rarity = 'rare';
+        const SCORE_COLUMNS = 'id, wife_avg_score, wife_count, girlfriend_avg_score, girlfriend_count, daughter_avg_score, daughter_count';
+        const CHARACTER_IDS = [
+            '010','011','012','013','014','015','016','017','020','022','023','030','032','033','040','041','043','060','061','062','070','071','072','073','074','075','080','082','090','091','092','093','094','095','100','101','102','103','104','105','110','111','112','120','121','130','131','132','140','141','142','143','150','160','161','162','170','171','172','180','181','182','183','190','191','192','193','194','195','200','201','202','203','210','212','220','221','222','223','224','225','226','227','230','231','232','233','234','240','241','242','250','251','252','253','254','255','260','261','262','263','270','271','272','280','281','282','283','284','290','291','300','301','302','303','304','305','306','307','308','310','311','312','313','314','315','321','330','331','350','351','352','353','354','355','361','370','371','380','381','382','390','391','392','400','401','402','403','411','412','430','431','432','440','441','450','451','470','480','481','482','490','491','500','501','502','510','511','513','514','520','521','530','531','532','550','551','560','561','562','563','570','580','581','590','600','601','800','801','802','803','804','810','811','812','813','820','821','822','830','831','832','833','834','835','836','840','841','842','850','851','852','853','900','901','902','903','904','905','907','908','910','911','912','914','915','916','917','918','919','920','921','922','923','924','925','928','929','930','931','932','933','934','935','936','937','939','940','941','942','943','944','945','946','947','948','951','952','960','961','962','963','964','965','966','967','968','969','970','971','973','974','975','976','977','979','980','981','982','983','985','988','989','990','991','992','993','994'
+        ];
 
-            return {
-                id: Date.now() + Math.random(),
-                top: stats[0],
-                right: stats[1],
-                bottom: stats[2],
-                left: stats[3],
-                emoji: EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
-                name: TITLES[Math.floor(Math.random() * TITLES.length)] + ' ' + NAMES[Math.floor(Math.random() * NAMES.length)],
-                rarity: rarity
-            };
+        const CATEGORIES = ['아내', '여자친구', '딸'];
+
+        const CATEGORY_MAP = {
+            '아내': 'wife',
+            '여자친구': 'girlfriend',
+            '딸': 'daughter'
+        };
+
+        const SCORE_TEXTS = {
+            1: 'ㅗ', 2: '절대 안됨', 3: '불가능', 4: '되겠냐?', 5: 'ㄴㄴ',
+            6: 'ㅇㅇ', 7: '가능', 8: '쌉가능', 9: '개싸ㅃ가능', 10: '이궈궈던~'
+        };
+
+        function getNikkeSprite(id) {
+            return `https://nikke-db-legacy.pages.dev/images/sprite/si_c${id}_00_s.png`;
         }
 
-        function generateNormalCard() {
-            let card;
-            do {
-                card = generateCard();
-            } while (card.rarity !== 'normal');
-            return card;
+        function showSuccessMessage() {
+            const successMessage = document.getElementById('success-message');
+            successMessage.classList.add('show');
+            setTimeout(() => successMessage.classList.remove('show'), 1500);
         }
 
-        function generateRareCard() {
-            let card;
-            do {
-                card = generateCard();
-            } while (card.rarity !== 'rare');
-            return card;
-        }
-
-        function generateEpicCard() {
-            let card;
-            do {
-                card = generateCard();
-            } while (card.rarity !== 'epic');
-            return card;
-        }
-
-        function generateLegendaryCard() {
-            let card;
-            do {
-                card = generateCard();
-            } while (card.rarity !== 'legendary');
-            return card;
-        }
-
-        function generateHeroCard() {
-            let card;
-            do {
-                card = generateCard();
-            } while (card.rarity !== 'hero');
-            return card;
-        }
-
-        function initGame() {
-            playerCards = [];
-            for (let i = 0; i < 4; i++) {
-                playerCards.push(generateNormalCard());
-            }
-            playerCards.push(generateRareCard());
-            
-            // 초기 덱은 처음 5장으로 설정
-            playerDeck = [...playerCards];
-            generateAIDeck();
-            newGame();
-        }
-
-        function generateAIDeck() {
-            aiCards = [];
-            // AI도 플레이어 덱과 같은 레어도 구성으로
-            const playerRarities = playerDeck.map(c => c.rarity);
-            
-            playerRarities.forEach(rarity => {
-                let card;
-                if (rarity === 'normal') {
-                    card = generateNormalCard();
-                } else if (rarity === 'rare') {
-                    card = generateRareCard();
-                } else if (rarity === 'epic') {
-                    card = generateEpicCard();
-                } else if (rarity === 'legendary') {
-                    card = generateLegendaryCard();
-                } else if (rarity === 'hero') {
-                    card = generateHeroCard();
-                } else {
-                    card = generateNormalCard();
-                }
-                aiCards.push(card);
-            });
-            
-            aiDeck = [...aiCards];
-        }
-
-        function newGame() {
-            generateAIDeck();
-            board = Array(9).fill(null);
-            // 덱이 설정되어 있으면 덱을 사용, 없으면 전체 카드 중 5장
-            if (playerDeck.length === 5) {
-                playerHand = [...playerDeck];
-            } else {
-                playerHand = playerCards.slice(0, 5);
-            }
-            aiHand = [...aiDeck];
-            selectedCard = null;
-            currentTurn = 'player';
-            gameOver = false;
-            renderBoard();
-            renderHands();
-            updateStatus('카드를 선택하고 보드에 배치하세요');
-        }
-
-        function renderBoard() {
-            const boardEl = document.getElementById('board');
-            boardEl.innerHTML = '';
-            for (let i = 0; i < 9; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                if (board[i]) {
-                    cell.classList.add('occupied');
-                    cell.appendChild(createCardElement(board[i], board[i].owner));
-                } else {
-                    cell.onclick = () => placeCard(i);
-                }
-                boardEl.appendChild(cell);
-            }
-        }
-
-        function renderHands() {
-            const playerHandEl = document.getElementById('playerHand');
-            playerHandEl.innerHTML = '';
-            playerHand.forEach(card => {
-                const cardEl = createCardElement(card, 'player', true);
-                cardEl.classList.add('hand-card');
-                if (selectedCard === card) {
-                    cardEl.classList.add('selected');
-                }
-                cardEl.onclick = () => selectCard(card);
-                playerHandEl.appendChild(cardEl);
-            });
-
-            const aiHandEl = document.getElementById('aiHand');
-            aiHandEl.innerHTML = '';
-            aiHand.forEach(card => {
-                const cardEl = createCardElement(card, 'ai', true);
-                cardEl.classList.add('hand-card');
-                aiHandEl.appendChild(cardEl);
-            });
-        }
-
-        function createCardElement(card, owner, isHand = false) {
-            const div = document.createElement('div');
-            div.className = `card ${owner} rarity-${card.rarity}`;
-            
-            div.innerHTML = `
-                <div class="card-stats card-top">${card.top}</div>
-                <div class="card-stats card-right">${card.right}</div>
-                <div class="card-stats card-bottom">${card.bottom}</div>
-                <div class="card-stats card-left">${card.left}</div>
-                <div class="card-emoji">${card.emoji}</div>
-                <div class="card-name name-${card.rarity}">${card.name}</div>
-            `;
-            
-            return div;
-        }
-
-        function selectCard(card) {
-            if (currentTurn !== 'player' || gameOver) return;
-            selectedCard = card;
-            renderHands();
-        }
-
-        function placeCard(index) {
-            if (currentTurn !== 'player' || !selectedCard || board[index] || gameOver) return;
-            
-            board[index] = { ...selectedCard, owner: 'player' };
-            playerHand = playerHand.filter(c => c.id !== selectedCard.id);
-            selectedCard = null;
-            
-            playPlacementEffect(board[index].rarity);
-            
-            setTimeout(() => {
-                checkFlips(index);
-                renderBoard();
-                renderHands();
-                
-                if (checkGameEnd()) return;
-                
-                currentTurn = 'ai';
-                updateStatus('AI 턴...');
-                setTimeout(aiTurn, 1000);
-            }, 500);
-        }
-
-        function aiTurn() {
-            if (gameOver) return;
-            
-            const emptySpots = board.map((cell, idx) => cell === null ? idx : -1).filter(i => i !== -1);
-            if (emptySpots.length === 0 || aiHand.length === 0) {
-                checkGameEnd();
+        function displayCharacterRankInfo(charId, rankingData) {
+            const rankInfoDiv = document.getElementById('modal-rank-info');
+            if (!rankingData) {
+                rankInfoDiv.innerHTML = `<div class="rank-info-loading">랭킹 데이터가 캐싱되지 않았습니다. 잠시 후 재시도하세요.</div>`;
                 return;
             }
 
-            const randomSpot = emptySpots[Math.floor(Math.random() * emptySpots.length)];
-            const randomCard = aiHand[Math.floor(Math.random() * aiHand.length)];
-            
-            board[randomSpot] = { ...randomCard, owner: 'ai' };
-            aiHand = aiHand.filter(c => c.id !== randomCard.id);
-            
-            playPlacementEffect(board[randomSpot].rarity);
-            
-            setTimeout(() => {
-                checkFlips(randomSpot);
-                renderBoard();
-                renderHands();
-                
-                if (checkGameEnd()) return;
-                
-                currentTurn = 'player';
-                updateStatus('당신의 턴입니다');
-            }, 500);
-        }
+            let html = '';
+            CATEGORIES.forEach(category => {
+                const prefix = CATEGORY_MAP[category];
+                const avgKey = `${prefix}_avg_score`;
+                const countKey = `${prefix}_count`;
 
-        function checkFlips(index) {
-            const card = board[index];
-            if (!card) return; // 카드가 없으면 종료
-            
-            const adjacent = getAdjacent(index);
-            let flipped = [];
-            let sameMatches = [];
-            let plusMatches = [];
+                const dataArr = rankingData[category] || [];
+                const charEntry = dataArr.find(item => item.id === charId);
 
-            // Same 체크
-            for (let dir in adjacent) {
-                if (adjacent[dir] !== null && board[adjacent[dir]] !== null) {
-                    const adjCard = board[adjacent[dir]];
-                    const cardVal = card[dir];
-                    const adjVal = adjCard[getOppositeDir(dir)];
-                    if (cardVal === adjVal) {
-                        sameMatches.push({ idx: adjacent[dir], val: cardVal });
-                    }
+                if (charEntry && (charEntry[countKey] > 0)) {
+                    const rank = dataArr.findIndex(item => item.id === charId) + 1;
+                    const score = parseFloat(charEntry[avgKey] || 0).toFixed(2);
+                    html += `<div class="rank-info-item"><strong>${category}:</strong> 평균 ${score}점, 현재 등수: <strong>${rank}위</strong> (총 ${charEntry[countKey]}표)</div>`;
+                } else {
+                    html += `<div class="rank-info-item"><strong>${category}:</strong> 아직 평가 데이터가 없습니다.</div>`;
                 }
-            }
-
-            if (sameMatches.length >= 2) {
-                showEffect('SAME!', '#0ff');
-                sameMatches.forEach(m => {
-                    if (board[m.idx] && board[m.idx].owner !== card.owner) {
-                        board[m.idx].owner = card.owner;
-                        flipped.push(m.idx);
-                    }
-                });
-            }
-
-            // Plus 체크
-            for (let dir in adjacent) {
-                if (adjacent[dir] !== null && board[adjacent[dir]] !== null) {
-                    const adjCard = board[adjacent[dir]];
-                    const cardVal = card[dir];
-                    const adjVal = adjCard[getOppositeDir(dir)];
-                    plusMatches.push({ idx: adjacent[dir], sum: cardVal + adjVal });
-                }
-            }
-
-            const sums = {};
-            plusMatches.forEach(m => {
-                if (!sums[m.sum]) sums[m.sum] = [];
-                sums[m.sum].push(m.idx);
             });
 
-            for (let sum in sums) {
-                if (sums[sum].length >= 2) {
-                    showEffect('PLUS!', '#f0f');
-                    sums[sum].forEach(idx => {
-                        if (board[idx] && board[idx].owner !== card.owner) {
-                            board[idx].owner = card.owner;
-                            flipped.push(idx);
-                        }
+            rankInfoDiv.innerHTML = html;
+        }
+
+        async function openRatingModal(charId) {
+            currentRatingCharId = charId;
+            const modal = document.getElementById('rating-modal');
+            const optionsContainer = document.getElementById('modal-rating-options');
+            document.getElementById('modal-char-image').src = getNikkeSprite(charId);
+            document.getElementById('modal-rank-info').innerHTML = `<div class="rank-info-loading">랭킹 정보 로딩 중...</div>`;
+
+            if (!cachedRankingData) await fetchRankings();
+            displayCharacterRankInfo(charId, cachedRankingData);
+
+            optionsContainer.innerHTML = '';
+            CATEGORIES.forEach(category => {
+                let itemHtml = `\n                    <div class="rating-item-modal" data-category="${category}">\n                        <strong>${category}:</strong>\n                        <span class="score-display" data-category="${category}">5점 (ㄴㄴ)</span>\n                        <div class="score-buttons-modal" data-category="${category}">\n                `;
+                for (let i = 1; i <= 10; i++) {
+                    const isDefault = i === 5 ? 'selected' : '';
+                    itemHtml += `<button class="score-button ${isDefault}" data-score="${i}" data-category="${category}">${i}</button>`;
+                }
+                itemHtml += `</div></div>`;
+                optionsContainer.innerHTML += itemHtml;
+            });
+
+            optionsContainer.querySelectorAll('.score-button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const score = parseInt(e.target.dataset.score);
+                    const category = e.target.dataset.category;
+                    const scoreButtons = optionsContainer.querySelector(`.score-buttons-modal[data-category="${category}"]`);
+                    scoreButtons.querySelectorAll('.score-button').forEach(btn => btn.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                    const display = optionsContainer.querySelector(`.score-display[data-category="${category}"]`);
+                    display.textContent = `${score}점 (${SCORE_TEXTS[score]})`;
+                });
+            });
+
+            modal.classList.add('active');
+            document.getElementById('main-content').style.filter = 'blur(5px)';
+        }
+
+        function closeRatingModal() {
+            document.getElementById('rating-modal').classList.remove('active');
+            document.getElementById('main-content').style.filter = 'none';
+            currentRatingCharId = null;
+        }
+
+        function renderCharacterGrid() {
+            const grid = document.getElementById('character-grid');
+            grid.innerHTML = '';
+
+            const totalCounts = new Map();
+            let maxTotalCount = 0;
+
+            CHARACTER_IDS.forEach(id => {
+                const raw = cachedById.get(id) || {};
+                const total = (raw.wife_count || 0) + (raw.girlfriend_count || 0) + (raw.daughter_count || 0);
+                totalCounts.set(id, total);
+                if (total > maxTotalCount) maxTotalCount = total;
+            });
+
+            CHARACTER_IDS.forEach(id => {
+                const totalCount = totalCounts.get(id) || 0;
+                const item = document.createElement('div');
+                let saturationRatio = 0;
+                if (maxTotalCount > 0 && totalCount > 0) {
+                    saturationRatio = Math.min(1.0, 0.1 + (0.9 * totalCount / maxTotalCount));
+                }
+                item.className = `character-item ${totalCount === 0 ? 'char-no-data' : ''}`;
+                item.dataset.charId = id;
+                item.style.setProperty('--saturation', saturationRatio.toFixed(3));
+                const displayCount = Math.floor(totalCount / 3);
+                item.innerHTML = `\n                    <img src="${getNikkeSprite(id)}" alt="캐릭터 ${id}" class="character-img">\n                    <small>(${displayCount}표)</small>\n                `;
+                item.addEventListener('click', (e) => { if (e.target.closest('.character-item') === item) openRatingModal(id); });
+                grid.appendChild(item);
+            });
+        }
+
+        document.getElementById('modal-submit-button').addEventListener('click', async () => {
+            if (!currentRatingCharId) return;
+            const panel = document.getElementById('modal-rating-options');
+            const charId = currentRatingCharId;
+            const ratings = {};
+            let allRated = true;
+            CATEGORIES.forEach(category => {
+                const selectedButton = panel.querySelector(`.score-buttons-modal[data-category="${category}"] .score-button.selected`);
+                if (!selectedButton) { allRated = false; return; }
+                ratings[category] = parseInt(selectedButton.dataset.score);
+            });
+            if (!allRated) { alert('모든 항목을 평가해야 완료할 수 있습니다.'); return; }
+
+            try {
+                let { data, error } = await client
+                    .from(SUPABASE_TABLE)
+                    .select(SCORE_COLUMNS)
+                    .eq('id', charId)
+                    .single();
+
+                if (error && error.code !== 'PGRST116') throw error;
+
+                let wife_score = ratings['아내'];
+                let wife_count = 1;
+                let girlfriend_score = ratings['여자친구'];
+                let girlfriend_count = 1;
+                let daughter_score = ratings['딸'];
+                let daughter_count = 1;
+
+                if (data) {
+                    wife_score = ((data.wife_avg_score || 0) * (data.wife_count || 0) + ratings['아내']) / ((data.wife_count || 0) + 1);
+                    wife_count = (data.wife_count || 0) + 1;
+                    girlfriend_score = ((data.girlfriend_avg_score || 0) * (data.girlfriend_count || 0) + ratings['여자친구']) / ((data.girlfriend_count || 0) + 1);
+                    girlfriend_count = (data.girlfriend_count || 0) + 1;
+                    daughter_score = ((data.daughter_avg_score || 0) * (data.daughter_count || 0) + ratings['딸']) / ((data.daughter_count || 0) + 1);
+                    daughter_count = (data.daughter_count || 0) + 1;
+
+                    const { error: updateError } = await client
+                        .from(SUPABASE_TABLE)
+                        .update({ 
+                            wife_avg_score: parseFloat(wife_score.toFixed(4)), wife_count: wife_count,
+                            girlfriend_avg_score: parseFloat(girlfriend_score.toFixed(4)), girlfriend_count: girlfriend_count,
+                            daughter_avg_score: parseFloat(daughter_score.toFixed(4)), daughter_count: daughter_count,
+                            created_at: new Date().toISOString(),
+                        })
+                        .eq('id', charId);
+
+                    if (updateError) throw updateError;
+                } else {
+                    const { error: insertError } = await client
+                        .from(SUPABASE_TABLE)
+                        .insert([{ id: charId, wife_avg_score: parseFloat(wife_score.toFixed(4)), wife_count: wife_count, girlfriend_avg_score: parseFloat(girlfriend_score.toFixed(4)), girlfriend_count: girlfriend_count, daughter_avg_score: parseFloat(daughter_score.toFixed(4)), daughter_count: daughter_count, created_at: new Date().toISOString() }]);
+                    if (insertError) throw insertError;
+                }
+
+                closeRatingModal();
+                showSuccessMessage();
+                await fetchRankings();
+
+            } catch (error) {
+                console.error('Supabase 데이터 처리 오류:', error.message || error);
+                alert(`평가 저장 실패: ${error.message || error}`);
+            }
+        });
+
+        async function fetchRankings() {
+            const rankingContainer = document.getElementById('ranking-container');
+            rankingContainer.innerHTML = '데이터 로딩 중...';
+
+            try {
+                const { data, error } = await client
+                    .from(SUPABASE_TABLE)
+                    .select(SCORE_COLUMNS);
+
+                if (error) throw error;
+
+                cachedById = new Map();
+                (data || []).forEach(item => cachedById.set(item.id, item));
+
+                const rankingData = {};
+
+                CATEGORIES.forEach(category => {
+                    const prefix = CATEGORY_MAP[category];
+                    const avgKey = `${prefix}_avg_score`;
+                    const arr = (data || []).map(item => ({ ...item, _avg_for_sort: item[avgKey] == null ? 0 : item[avgKey] }));
+                    arr.sort((a, b) => b._avg_for_sort - a._avg_for_sort);
+                    rankingData[category] = arr;
+                });
+
+                cachedRankingData = rankingData;
+
+                renderRankingTables(rankingData);
+                renderCharacterGrid();
+
+            } catch (error) {
+                console.error('랭킹 데이터 로딩 오류:', error.message || error);
+                rankingContainer.innerHTML = `⚠️ 랭킹 로딩 실패. 콘솔을 확인하세요. (Error: ${error.message || error})`;
+                cachedById = new Map();
+                renderCharacterGrid();
+            }
+        }
+
+        function renderRankingTables(rankings) {
+            const rankingContainer = document.getElementById('ranking-container');
+            rankingContainer.innerHTML = '';
+
+            CATEGORIES.forEach(category => {
+                const prefix = CATEGORY_MAP[category];
+                const avgKey = `${prefix}_avg_score`;
+                const countKey = `${prefix}_count`;
+                const data = rankings[category] || [];
+
+                let tableHtml = `<div class="ranking-table-wrapper"><h3>${category} 랭킹</h3><table class="ranking-table"><thead><tr><th>순위</th><th>이미지</th><th>평균 점수</th><th>투표수</th></tr></thead><tbody>`;
+
+                if (data.length === 0) {
+                    tableHtml += `<tr><td colspan="4">참여자가 있는 캐릭터가 없습니다.</td></tr>`;
+                } else {
+                    data.slice(0, 20).forEach((item, index) => {
+                        const score = item[avgKey] ? parseFloat(item[avgKey]).toFixed(2) : (item._avg_for_sort ? parseFloat(item._avg_for_sort).toFixed(2) : '0.00');
+                        const votes = item[countKey] || 0;
+                        tableHtml += `\n                            <tr class="ranking-row">\n                                <td>${index + 1}</td>\n                                <td><img src="${getNikkeSprite(item.id)}" alt="캐릭터 ${item.id}" class="ranking-img" data-char-id="${item.id}"></td>\n                                <td>${score}</td>\n                                <td>${votes}</td>\n                            </tr>\n                        `;
                     });
                 }
-            }
 
-            // 일반 뒤집기
-            for (let dir in adjacent) {
-                if (adjacent[dir] !== null && board[adjacent[dir]] !== null) {
-                    const adjCard = board[adjacent[dir]];
-                    if (adjCard.owner !== card.owner) {
-                        const cardVal = card[dir];
-                        const adjVal = adjCard[getOppositeDir(dir)];
-                        if (cardVal > adjVal) {
-                            board[adjacent[dir]].owner = card.owner;
-                            flipped.push(adjacent[dir]);
-                        }
-                    }
-                }
-            }
-
-            // 콤보
-            if (flipped.length > 0) {
-                showEffect('COMBO!', '#ff0');
-                flipped.forEach(idx => {
-                    setTimeout(() => checkFlips(idx), 300);
-                });
-            }
-        }
-
-        function getAdjacent(index) {
-            const adj = {};
-            if (index >= 3) adj.top = index - 3;
-            if (index % 3 !== 2) adj.right = index + 1;
-            if (index < 6) adj.bottom = index + 3;
-            if (index % 3 !== 0) adj.left = index - 1;
-            return adj;
-        }
-
-        function getOppositeDir(dir) {
-            const opp = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' };
-            return opp[dir];
-        }
-
-        function checkGameEnd() {
-            if (board.every(cell => cell !== null)) {
-                gameOver = true;
-                const playerCount = board.filter(c => c.owner === 'player').length;
-                const aiCount = board.filter(c => c.owner === 'ai').length;
-                
-                if (playerCount > aiCount) {
-                    updateStatus('🎉 승리! 상대의 카드를 획득합니다!');
-                    const stolen = aiCards[Math.floor(Math.random() * aiCards.length)];
-                    playerCards.push(stolen);
-                    showEffect('VICTORY!', '#0f0');
-                } else if (aiCount > playerCount) {
-                    updateStatus('😢 패배... 카드를 빼앗겼습니다.');
-                    if (playerCards.length > 0) {
-                        playerCards.splice(Math.floor(Math.random() * playerCards.length), 1);
-                    }
-                    showEffect('DEFEAT', '#f00');
-                } else {
-                    updateStatus('🤝 무승부!');
-                    showEffect('DRAW', '#ff0');
-                }
-                return true;
-            }
-            return false;
-        }
-
-        function showEffect(text, color) {
-            const effect = document.createElement('div');
-            effect.className = 'effect-text';
-            effect.textContent = text;
-            effect.style.color = color;
-            effect.style.textShadow = `0 0 20px ${color}, 0 0 40px ${color}`;
-            document.body.appendChild(effect);
-            setTimeout(() => effect.remove(), 1000);
-        }
-
-        function playPlacementEffect(rarity) {
-            const board = document.getElementById('board');
-            board.classList.add('shake');
-            setTimeout(() => board.classList.remove('shake'), 500);
-        }
-
-        function updateStatus(text) {
-            document.getElementById('gameStatus').textContent = text;
-        }
-
-        function showDeckBuilder() {
-            const modal = document.getElementById('deckModal');
-            const builder = document.getElementById('deckBuilder');
-            builder.innerHTML = '';
-            
-            // 현재 덱 설정을 tempDeck에 복사
-            tempDeck = [...playerDeck];
-            
-            playerCards.forEach(card => {
-                const cardEl = createCardElement(card, 'player', true);
-                cardEl.classList.add('collection-card');
-                if (tempDeck.some(c => c.id === card.id)) {
-                    cardEl.classList.add('selected-for-deck');
-                }
-                cardEl.onclick = () => toggleDeckSelection(card, cardEl);
-                builder.appendChild(cardEl);
+                tableHtml += `</tbody></table></div>`;
+                rankingContainer.innerHTML += tableHtml;
             });
-            
-            modal.style.display = 'flex';
-        }
 
-        let tempDeck = [];
-
-        function toggleDeckSelection(card, element) {
-            const index = tempDeck.findIndex(c => c.id === card.id);
-            if (index > -1) {
-                tempDeck.splice(index, 1);
-                element.classList.remove('selected-for-deck');
-            } else {
-                if (tempDeck.length < 5) {
-                    tempDeck.push(card);
-                    element.classList.add('selected-for-deck');
-                } else {
-                    alert('덱은 최대 5장입니다!');
-                }
-            }
-        }
-
-        function saveDeck() {
-            if (tempDeck.length !== 5) {
-                alert('정확히 5장을 선택해주세요!');
-                return;
-            }
-            playerDeck = [...tempDeck];
-            tempDeck = [];
-            closeModal('deckModal');
-            alert('덱이 저장되었습니다!');
-        }
-
-        function showFusion() {
-            if (playerCards.length < 6) {
-                alert('합성하려면 최소 6장의 카드가 필요합니다!');
-                return;
-            }
-            
-            const modal = document.getElementById('fusionModal');
-            const builder = document.getElementById('fusionBuilder');
-            builder.innerHTML = '';
-            
-            playerCards.forEach(card => {
-                const cardEl = createCardElement(card, 'player', true);
-                cardEl.classList.add('collection-card');
-                cardEl.onclick = () => toggleFusionSelection(card, cardEl);
-                builder.appendChild(cardEl);
+            rankingContainer.querySelectorAll('.ranking-img').forEach(img => {
+                img.addEventListener('click', (e) => openRatingModal(e.target.dataset.charId));
             });
-            
-            modal.style.display = 'flex';
         }
 
-        let fusionCards = [];
-
-        function toggleFusionSelection(card, element) {
-            const index = fusionCards.findIndex(c => c.id === card.id);
-            if (index > -1) {
-                fusionCards.splice(index, 1);
-                element.classList.remove('selected-for-fusion');
-            } else {
-                if (fusionCards.length < 2) {
-                    fusionCards.push(card);
-                    element.classList.add('selected-for-fusion');
-                } else {
-                    alert('합성은 2장만 선택 가능합니다!');
-                }
-            }
-        }
-
-        function performFusion() {
-            if (fusionCards.length !== 2) {
-                alert('정확히 2장을 선택해주세요!');
-                return;
-            }
-
-            const parent1 = fusionCards[0];
-            const parent2 = fusionCards[1];
-
-            // 합성 과정 메시지
-            let fusionLog = '🧬 합성 과정:\n\n';
-            fusionLog += `부모 1: ${parent1.emoji} ${parent1.name}\n`;
-            fusionLog += `  [상: ${parent1.top}, 우: ${parent1.right}, 하: ${parent1.bottom}, 좌: ${parent1.left}]\n\n`;
-            fusionLog += `부모 2: ${parent2.emoji} ${parent2.name}\n`;
-            fusionLog += `  [상: ${parent2.top}, 우: ${parent2.right}, 하: ${parent2.bottom}, 좌: ${parent2.left}]\n\n`;
-            fusionLog += '━━━━━━━━━━━━━━━━━\n\n';
-
-            const newCard = {
-                id: Date.now() + Math.random(),
-                rarity: 'normal'
-            };
-
-            // 상 숫자 계산
-            if (parent1.top === parent2.top) {
-                newCard.top = Math.min(10, parent1.top + 1);
-                fusionLog += `상: ${parent1.top} = ${parent2.top} → ${newCard.top} (동일 +1)\n`;
-            } else {
-                const chosen = [parent1.top, parent2.top][Math.floor(Math.random() * 2)];
-                newCard.top = chosen;
-                fusionLog += `상: ${parent1.top} or ${parent2.top} → ${newCard.top}\n`;
-            }
-
-            // 우 숫자 계산
-            if (parent1.right === parent2.right) {
-                newCard.right = Math.min(10, parent1.right + 1);
-                fusionLog += `우: ${parent1.right} = ${parent2.right} → ${newCard.right} (동일 +1)\n`;
-            } else {
-                const chosen = [parent1.right, parent2.right][Math.floor(Math.random() * 2)];
-                newCard.right = chosen;
-                fusionLog += `우: ${parent1.right} or ${parent2.right} → ${newCard.right}\n`;
-            }
-
-            // 하 숫자 계산
-            if (parent1.bottom === parent2.bottom) {
-                newCard.bottom = Math.min(10, parent1.bottom + 1);
-                fusionLog += `하: ${parent1.bottom} = ${parent2.bottom} → ${newCard.bottom} (동일 +1)\n`;
-            } else {
-                const chosen = [parent1.bottom, parent2.bottom][Math.floor(Math.random() * 2)];
-                newCard.bottom = chosen;
-                fusionLog += `하: ${parent1.bottom} or ${parent2.bottom} → ${newCard.bottom}\n`;
-            }
-
-            // 좌 숫자 계산
-            if (parent1.left === parent2.left) {
-                newCard.left = Math.min(10, parent1.left + 1);
-                fusionLog += `좌: ${parent1.left} = ${parent2.left} → ${newCard.left} (동일 +1)\n`;
-            } else {
-                const chosen = [parent1.left, parent2.left][Math.floor(Math.random() * 2)];
-                newCard.left = chosen;
-                fusionLog += `좌: ${parent1.left} or ${parent2.left} → ${newCard.left}\n`;
-            }
-
-            // 이모지와 이름
-            newCard.emoji = [parent1.emoji, parent2.emoji][Math.floor(Math.random() * 2)];
-            newCard.name = [parent1.name, parent2.name][Math.floor(Math.random() * 2)];
-            fusionLog += `\n이모지: ${parent1.emoji} or ${parent2.emoji} → ${newCard.emoji}\n`;
-            fusionLog += `이름: "${parent1.name}" or "${parent2.name}"\n     → "${newCard.name}"\n\n`;
-
-            const sum = newCard.top + newCard.right + newCard.bottom + newCard.left;
-            if (sum > 25) newCard.rarity = 'hero';
-            else if (sum > 20) newCard.rarity = 'legendary';
-            else if (sum > 15) newCard.rarity = 'epic';
-            else if (sum > 10) newCard.rarity = 'rare';
-
-            fusionLog += `━━━━━━━━━━━━━━━━━\n`;
-            fusionLog += `총합: ${sum} → 등급: ${newCard.rarity.toUpperCase()}`;
-
-            alert(fusionLog);
-
-            playerCards = playerCards.filter(c => c.id !== parent1.id && c.id !== parent2.id);
-            playerCards.push(newCard);
-
-            playerDeck = playerDeck.filter(c => c.id !== parent1.id && c.id !== parent2.id);
-
-            fusionCards = [];
-            closeModal('fusionModal');
-            
-            showEffect('FUSION SUCCESS!', '#f0f');
-            alert(`✨ ${newCard.emoji} ${newCard.name} 탄생!`);
-        }
-
-        function showCollection() {
-            const modal = document.getElementById('collectionModal');
-            const view = document.getElementById('collectionView');
-            view.innerHTML = '';
-            
-            playerCards.forEach(card => {
-                const cardEl = createCardElement(card, 'player', true);
-                cardEl.classList.add('collection-card');
-                view.appendChild(cardEl);
-            });
-            
-            modal.style.display = 'flex';
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-            tempDeck = [];
-            fusionCards = [];
-        }
-
-        window.onclick = function(event) {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
-                tempDeck = [];
-                fusionCards = [];
-            }
-        }
-
-        initGame();
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchRankings();
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.getElementById('rating-modal').classList.contains('active')) closeRatingModal(); });
+        });
     </script>
 </body>
 </html>
