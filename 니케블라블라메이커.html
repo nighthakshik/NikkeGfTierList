@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIKKE Blabla Maker!</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --point-orange: #ff9d00;
+            --bg-light-gray: #f2f2f2;
+            --grid-line: #e5e5e5;
+            --user-bubble: #ff9d00;
+            --other-bubble: #ffffff;
+        }
+
+        body {
+            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            background-color: #ffffff;
+            display: flex; justify-content: center; align-items: flex-start;
+            padding: 40px; margin: 0; gap: 40px;
+        }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; align-items: center; padding: 20px 10px; gap: 20px; }
+            #phone-view { width: 340px !important; height: 720px !important; border-width: 8px; }
+            .controls { width: 340px !important; box-sizing: border-box; padding: 15px; }
+        }
+
+        @keyframes msgFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .msg-row { 
+            display: flex; align-items: flex-start; width: 100%; position: relative; transition: all 0.2s;
+            animation: msgFadeIn 0.3s ease-out forwards; 
+        }
+
+        .msg-row.mine + .msg-row.mine,
+        .msg-row.other + .msg-row.other { margin-top: -3px; }
+        .msg-row.other + .msg-row.other .profile-area { min-height: 0; }
+
+        #phone-view {
+            width: 380px; height: 780px;
+            background-color: var(--bg-light-gray);
+            background-image: linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 20px 20px;
+            border: 12px solid #111; border-radius: 40px;
+            overflow: hidden; display: flex; flex-direction: column;
+            position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.1); flex-shrink: 0;
+        }
+
+        .header {
+            background-color: var(--point-orange);
+            background-image: radial-gradient(rgba(255,255,255,0.2) 15%, transparent 16%);
+            background-size: 15px 15px; color: white; padding: 12px 20px; position: relative; min-height: 90px;
+        }
+
+        .status-bar { font-size: 14px; margin-bottom: 10px; font-weight: bold; }
+        .chat-info { display: flex; align-items: center; font-size: 25px; font-weight: 700; z-index: 1; position: relative; margin-top: 40px;}
+
+        #chat-window { flex: 1; padding: 20px 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        
+        .bubble {
+            padding: 8px 14px; border-radius: 18px; max-width: 85%;
+            font-size: 14px; line-height: 1.4; font-weight: 700;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1); word-break: break-all; cursor: pointer;
+        }
+
+        .bubble img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            display: block;
+            margin: 4px 0;
+        }
+
+        .other { justify-content: flex-start; }
+        .profile-area { width: 60px; margin-right: 8px; flex-shrink: 0; display: flex; justify-content: center; min-height: 55px; }
+        .profile-img { width: 55px; height: 55px; border-radius: 50%; border: 2px solid white; background: #eee; }
+        .other-content { display: flex; flex-direction: column; max-width: 80%; }
+        .other-name { font-size: 13px; margin-bottom: 4px; color: #444; font-weight: 700; }
+        .other .bubble { background: var(--other-bubble); border-top-left-radius: 4px; }
+
+        .mine { justify-content: flex-end; }
+        .mine .bubble { background: var(--user-bubble); color: white; border-top-right-radius: 4px; }
+
+        .edit-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); display: none; z-index: 200;
+            flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;
+        }
+        .edit-box { background: white; padding: 15px; border-radius: 15px; width: 100%; }
+        .edit-box label { font-size: 11px; color: #888; display: block; margin-top: 5px; }
+        .edit-box input { width: 100%; padding: 10px; margin: 5px 0 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-weight: 700; }
+        .edit-actions { display: flex; flex-wrap: wrap; gap: 5px; }
+        .edit-actions button { flex: 1 1 45%; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
+
+        #char-grid {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 55%;
+            background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(12px);
+            display: none; grid-template-columns: repeat(4, 1fr);
+            gap: 5px; padding: 10px; overflow-y: auto; z-index: 300; border-top: 1px solid rgba(255,157,0,0.3);
+        }
+        #char-grid img { width: 100%; border-radius: 10px; cursor: pointer; background: rgba(255,255,255,0.8); transition: 0.1s; }
+        #char-grid img:hover { transform: scale(1.05); }
+
+        .controls { width: 320px; padding: 25px; border: 1px solid #e0e0e0; border-radius: 20px; background: #fafafa; }
+        .toggle-container { display: flex; gap: 5px; margin-bottom: 15px; }
+        .toggle-btn { flex: 1; padding: 10px; background: #eee; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #666; }
+        .toggle-btn.active { background: var(--point-orange); color: white; }
+        input, button { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; margin-bottom: 10px; }
+        .send-btn { background: #333; color: white; border: none; font-weight: bold; cursor: pointer; }
+        .img-btn { background: #555; color: white; border: none; font-weight: bold; cursor: pointer; }
+        .save-btn { background: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; }
+        .clear-all-btn { background: #ff4d4d; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="phone-view">
+        <div id="edit-overlay" class="edit-overlay">
+            <div class="edit-box">
+                <label>이름 수정</label>
+                <input type="text" id="edit-input-name">
+                <label>대사 수정</label>
+                <input type="text" id="edit-input-text">
+                <div class="edit-actions">
+                    <button onclick="applyEdit()" style="background:var(--point-orange); color:white;">적용</button>
+                    <button onclick="showCharGrid()" style="background:#eee;">프사/이름 변경</button>
+                    <button onclick="deleteMsg()" style="background:#ff4d4d; color:white;">삭제</button>
+                </div>
+            </div>
+        </div>
+        <div id="char-grid"></div>
+        <div class="header">
+            <div class="status-bar" id="live-clock">00:00</div>
+            <div class="chat-info"><span class="back-btn">〈</span><span id="room-name-display">라피</span></div>
+        </div>
+        <div id="chat-window"></div>
+    </div>
+
+    <div class="controls">
+        <label style="font-size:12px; font-weight:bold; color:#666;">채팅방 이름</label>
+        <input type="text" id="in-room-name" value="라피" oninput="document.getElementById('room-name-display').innerText=this.value">
+        <div class="toggle-container">
+            <button class="toggle-btn" id="btn-other" onclick="setSender('other')">상대방</button>
+            <button class="toggle-btn active" id="id-btn-mine" onclick="setSender('mine')">나</button>
+        </div>
+        <input type="text" id="in-msg" placeholder="대화 입력..." onkeypress="if(event.keyCode==13) addMessage()">
+        <button onclick="addMessage()" class="send-btn">보내기</button>
+        <input type="file" id="in-img" accept="image/*" style="display:none" onchange="uploadImage(this)">
+        <button onclick="document.getElementById('in-img').click()" class="img-btn">이미지 보내기</button>
+        <button onclick="saveAsImage()" class="save-btn">이미지로 저장</button>
+        <button onclick="clearAllMessages()" class="clear-all-btn">전체 삭제</button>
+    </div>
+
+    <script>
+        const charData = [{id:"c010", name:"라피"}, {id:"c011", name:"네온"}, {id:"c012", name:"아니스"}, {id:"c013", name:"마리안"}, {id:"c014", name:"네온"}, {id:"c015", name:"아니스"}, {id:"c016", name:"라피"}, {id:"c017", name:"아니스"}, {id:"c020", name:"델타"}, {id:"c022", name:"시그널"}, {id:"c023", name:"델타"}, {id:"c030", name:"폴리"}, {id:"c032", name:"미란다"}, {id:"c033", name:"키리"}, {id:"c040", name:"D"}, {id:"c041", name:"K"}, {id:"c043", name:"D"}, {id:"c060", name:"벨로타"}, {id:"c061", name:"미카"}, {id:"c062", name:"미카"}, {id:"c070", name:"브리드"}, {id:"c071", name:"솔린"}, {id:"c072", name:"디젤"}, {id:"c073", name:"브리드"}, {id:"c074", name:"솔린"}, {id:"c075", name:"디젤"}, {id:"c080", name:"센티"}, {id:"c082", name:"리타"}, {id:"c090", name:"엠마"}, {id:"c091", name:"베스티"}, {id:"c092", name:"은화"}, {id:"c093", name:"엠마"}, {id:"c094", name:"베스티"}, {id:"c095", name:"은화"}, {id:"c100", name:"라플라스"}, {id:"c101", name:"드레이크"}, {id:"c102", name:"맥스웰"}, {id:"c103", name:"라플라스"}, {id:"c104", name:"드레이크"}, {id:"c105", name:"맥스웰"}, {id:"c110", name:"크로우"}, {id:"c111", name:"자칼"}, {id:"c112", name:"바이퍼"}, {id:"c120", name:"N102"}, {id:"c121", name:"앤"}, {id:"c130", name:"메어리"}, {id:"c131", name:"페퍼"}, {id:"c132", name:"메어리"}, {id:"c140", name:"슈가"}, {id:"c141", name:"밀크"}, {id:"c142", name:"프림"}, {id:"c143", name:"밀크"}, {id:"c150", name:"율리아"}, {id:"c160", name:"유니"}, {id:"c161", name:"미하라"}, {id:"c162", name:"미하라"}, {id:"c170", name:"프리바티"}, {id:"c171", name:"율하"}, {id:"c172", name:"에드미"}, {id:"c180", name:"길로틴"}, {id:"c181", name:"메이든"}, {id:"c182", name:"길로틴"}, {id:"c183", name:"메이든"}, {id:"c190", name:"루드밀라"}, {id:"c191", name:"앨리스"}, {id:"c192", name:"토브"}, {id:"c193", name:"네베"}, {id:"c194", name:"루드밀라"}, {id:"c195", name:"앨리스"}, {id:"c200", name:"루피"}, {id:"c201", name:"얀"}, {id:"c202", name:"도라"}, {id:"c203", name:"루피"}, {id:"c210", name:"엑시아"}, {id:"c212", name:"노벨"}, {id:"c220", name:"스노우화이트"}, {id:"c221", name:"라푼젤"}, {id:"c222", name:"홍련"}, {id:"c223", name:"나유타"}, {id:"c224", name:"스노우화이트"}, {id:"c225", name:"홍련"}, {id:"c226", name:"라푼젤"}, {id:"c230", name:"하란"}, {id:"c231", name:"이사벨"}, {id:"c232", name:"노아"}, {id:"c233", name:"도로시"}, {id:"c234", name:"도로시"}, {id:"c240", name:"루마니"}, {id:"c241", name:"에피넬"}, {id:"c242", name:"폴크방"}, {id:"c260", name:"모더니아"}, {id:"c261", name:"농ㅋㅋ"}, {id:"c262", name:"리버렐리오"}, {id:"c263", name:"인디빌리아"}, {id:"c270", name:"블랑"}, {id:"c271", name:"누아르"}, {id:"c272", name:"루주"}, {id:"c280", name:"로산나"}, {id:"c281", name:"목단"}, {id:"c282", name:"사쿠라"}, {id:"c283", name:"로산나"}, {id:"c284", name:"사쿠라"}, {id:"c290", name:"마나"}, {id:"c291", name:"에테르"}, {id:"c300", name:"솔져EG"}, {id:"c301", name:"솔져FA"}, {id:"c302", name:"프로덕트08"}, {id:"c303", name:"프로덕트12"}, {id:"c304", name:"iDoll플라워"}, {id:"c305", name:"iDoll오션"}, {id:"c306", name:"솔져OW"}, {id:"c307", name:"피나"}, {id:"c308", name:"iDoll썬"}, {id:"c310", name:"에이드"}, {id:"c311", name:"코코아"}, {id:"c312", name:"소다"}, {id:"c313", name:"프리바티"}, {id:"c314", name:"소다"}, {id:"c315", name:"에이드"}, {id:"c321", name:"마르차나"}, {id:"c330", name:"크라운"}, {id:"c331", name:"차임"}, {id:"c350", name:"마스트"}, {id:"c351", name:"앵커"}, {id:"c352", name:"헬름"}, {id:"c353", name:"헬름"}, {id:"c354", name:"마스트"}, {id:"c355", name:"앵커"}, {id:"c361", name:"탈로스"}, {id:"c370", name:"이터니티"}, {id:"c371", name:"엔드리스"}, {id:"c380", name:"네로"}, {id:"c381", name:"비스킷"}, {id:"c382", name:"레오나"}, {id:"c390", name:"츠바이"}, {id:"c391", name:"아인"}, {id:"c392", name:"라이"}, {id:"c400", name:"길티"}, {id:"c401", name:"신"}, {id:"c402", name:"퀀시"}, {id:"c403", name:"퀀시"}, {id:"c411", name:"플로라"}, {id:"c412", name:"트리나"}, {id:"c430", name:"노이즈"}, {id:"c431", name:"볼륨"}, {id:"c432", name:"아리아"}, {id:"c440", name:"아이리"}, {id:"c441", name:"아비스타"}, {id:"c450", name:"나가"}, {id:"c451", name:"티아"}, {id:"c470", name:"레드후드"}, {id:"c480", name:"리버린"}, {id:"c481", name:"프레자일"}, {id:"c482", name:"로지"}, {id:"c490", name:"해머링"}, {id:"c491", name:"드릴리"}, {id:"c500", name:"일레그"}, {id:"c501", name:"트로니"}, {id:"c502", name:"일레그"}, {id:"c511", name:"신데렐라"}, {id:"c513", name:"세이렌"}, {id:"c514", name:"그레이브"}, {id:"c520", name:"브래디"}, {id:"c521", name:"크러스트"}, {id:"c530", name:"스카이"}, {id:"c531", name:"시엘로"}, {id:"c532", name:"소라"}, {id:"c550", name:"베이"}, {id:"c551", name:"클레이"}, {id:"c560", name:"베히모스"}, {id:"c561", name:"지즈"}, {id:"c562", name:"레비아탄"}, {id:"c563", name:"바하무트"}, {id:"c570", name:"아크레인저:블랙"}, {id:"c580", name:"팬텀"}, {id:"c581", name:"아르카나"}, {id:"c590", name:"모리"}, {id:"c600", name:"민트"}, {id:"c601", name:"프리카"}, {id:"c850", name:"이브"}, {id:"c851", name:"레이븐"}, {id:"c852", name:"릴리"}, {id:"c900", name:"잉그리드"}, {id:"c901", name:"슈엔"}, {id:"c902", name:"머스탱"}, {id:"c903", name:"앤더슨"}, {id:"c904", name:"에닉"}, {id:"c905", name:"리안"}, {id:"c907", name:"시프티"}, {id:"c908", name:"파피용"}, {id:"c914", name:"버닝엄"}, {id:"c916", name:"남성 지휘관"}, {id:"c917", name:"여성지휘관"}, {id:"c918", name:"스캐빈저1"}, {id:"c919", name:"스캐빈저2"}, {id:"c920", name:"마피아"}, {id:"c925", name:"요한"}, {id:"c928", name:"잉크"}, {id:"c929", name:"세실"}, {id:"c930", name:"아니이름뭐였지"}, {id:"c933", name:"볼트"}, {id:"c934", name:"안젤리나"}, {id:"c935", name:"이름뭐였지"}, {id:"c939", name:"도반"}, {id:"c940", name:"E.H."}, {id:"c941", name:"피나"}, {id:"c942", name:"갓데스의 지휘관"}, {id:"c943", name:"릴리바이스"}, {id:"c944", name:"신데렐라"}, {id:"c946", name:"고양이"}, {id:"c961", name:"오스왈드"}, {id:"c965", name:"홍련"}, {id:"c966", name:"라푼젤"}, {id:"c971", name:"장화"}, {id:"c973", name:"지엔"}, {id:"c975", name:"티미"}, {id:"c977", name:"킬로"}, {id:"c979", name:"에이브"}, {id:"c980", name:"헨젤"}, {id:"c981", name:"그레텔"}, {id:"c982", name:"레드슈즈"}, {id:"c991", name:"D.E.E.P."}, {id:"c992", name:"온리원"}, {id:"c993", name:"메카 시프티"}];
+
+        let currentSender = 'mine', currentId = "c010", editingRow = null, tempCharId = "c010";
+
+        setInterval(() => {
+            const d = new Date();
+            document.getElementById('live-clock').innerText = d.getHours() + ":" + (d.getMinutes()<10?'0':'') + d.getMinutes();
+        }, 1000);
+
+        const grid = document.getElementById('char-grid');
+        charData.forEach(char => {
+            const img = document.createElement('img');
+            img.src = `https://nikke-db-legacy.pages.dev/images/sprite/si_${char.id}_00_s.png`;
+            img.onclick = () => {
+                tempCharId = char.id;
+                document.getElementById('edit-input-name').value = char.name;
+                grid.style.display = 'none';
+            };
+            grid.appendChild(img);
+        });
+
+        function reorderLayouts() {
+            const rows = document.querySelectorAll('.msg-row');
+            let lastOtherName = "";
+            rows.forEach(row => {
+                if(row.classList.contains('other')) {
+                    const nameEl = row.querySelector('.other-name');
+                    const profileArea = row.querySelector('.profile-area');
+                    const currentName = nameEl ? nameEl.dataset.originName || nameEl.innerText : "";
+                    if(currentName === lastOtherName) {
+                        if(nameEl) nameEl.style.display = 'none';
+                        if(profileArea) profileArea.innerHTML = "";
+                    } else {
+                        if(nameEl) nameEl.style.display = 'block';
+                        const cid = row.dataset.charId || "c010";
+                        if(profileArea) profileArea.innerHTML = `<img src="https://nikke-db-legacy.pages.dev/images/sprite/si_${cid}_00_s.png" class="profile-img">`;
+                        lastOtherName = currentName;
+                    }
+                } else { lastOtherName = "MYSELF"; }
+            });
+        }
+
+        function setSender(type) {
+            currentSender = type;
+            document.getElementById('id-btn-mine').classList.toggle('active', type === 'mine');
+            document.getElementById('btn-other').classList.toggle('active', type === 'other');
+        }
+
+        function uploadImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    addMessage(e.target.result, true);
+                };
+                reader.readAsDataURL(input.files[0]);
+                input.value = '';
+            }
+        }
+
+        function addMessage(content = null, isImage = false) {
+            const text = content || document.getElementById('in-msg').value;
+            if(!text) return;
+
+            const charInfo = charData.find(c => c.id === currentId);
+            const chatWin = document.getElementById('chat-window');
+            const row = document.createElement('div');
+            row.className = `msg-row ${currentSender}`;
+            row.dataset.charId = currentId;
+            row.onclick = () => openEdit(row);
+
+            const bubbleContent = isImage ? `<img src="${text}">` : text;
+
+            if(currentSender === 'other') {
+                row.innerHTML = `<div class="profile-area"></div><div class="other-content"><div class="other-name" data-origin-name="${charInfo.name}">${charInfo.name}</div><div class="bubble">${bubbleContent}</div></div>`;
+            } else {
+                row.innerHTML = `<div class="bubble">${bubbleContent}</div>`;
+            }
+
+            chatWin.appendChild(row);
+            reorderLayouts();
+            chatWin.scrollTop = chatWin.scrollHeight;
+            if(!isImage) document.getElementById('in-msg').value = '';
+        }
+
+        function openEdit(row) {
+            editingRow = row;
+            tempCharId = row.dataset.charId || currentId;
+            const bubble = row.querySelector('.bubble');
+            const nameEl = row.querySelector('.other-name');
+            
+            document.getElementById('edit-overlay').style.display = 'flex';
+            
+            if(bubble.querySelector('img')) {
+                document.getElementById('edit-input-text').value = "[이미지 메시지]";
+                document.getElementById('edit-input-text').disabled = true;
+            } else {
+                document.getElementById('edit-input-text').value = bubble.innerText;
+                document.getElementById('edit-input-text').disabled = false;
+            }
+            
+            document.getElementById('edit-input-name').value = nameEl ? (nameEl.dataset.originName || nameEl.innerText) : "";
+            document.getElementById('edit-input-name').disabled = !row.classList.contains('other');
+        }
+
+        function applyEdit() {
+            if(!editingRow) return;
+            const nameInput = document.getElementById('edit-input-name');
+            const textInput = document.getElementById('edit-input-text');
+
+            if(!textInput.disabled) {
+                editingRow.querySelector('.bubble').innerText = textInput.value;
+            }
+
+            if(editingRow.classList.contains('other')) {
+                const nameEl = editingRow.querySelector('.other-name');
+                if(nameEl) {
+                    nameEl.innerText = nameInput.value;
+                    nameEl.dataset.originName = nameInput.value;
+                }
+                editingRow.dataset.charId = tempCharId;
+            }
+            reorderLayouts();
+            closeEdit();
+        }
+
+        function deleteMsg() { if(editingRow) editingRow.remove(); reorderLayouts(); closeEdit(); }
+        
+        function clearAllMessages() {
+            if(confirm("모든 대화를 삭제하시겠습니까?")) {
+                document.getElementById('chat-window').innerHTML = "";
+            }
+        }
+
+        function showCharGrid() { grid.style.display = 'grid'; }
+        function closeEdit() { 
+            document.getElementById('edit-overlay').style.display = 'none'; 
+            grid.style.display = 'none'; 
+            editingRow = null; 
+        }
+
+        function saveAsImage() {
+            const phoneView = document.getElementById('phone-view');
+            html2canvas(phoneView, {
+                useCORS: true,
+                backgroundColor: null,
+                scale: 2 
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `blabla_${new Date().getTime()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+
+        document.getElementById('edit-overlay').onclick = (e) => { if(e.target.id === 'edit-overlay') closeEdit(); };
+    </script>
+</body>
+</html>
