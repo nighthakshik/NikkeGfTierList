@@ -1,316 +1,828 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NIKKE Blabla Maker!</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <style>
-        :root {
-            --point-orange: #ff9d00;
-            --bg-light-gray: #f2f2f2;
-            --grid-line: #e5e5e5;
-            --user-bubble: #ff9d00;
-            --other-bubble: #ffffff;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>니케 일부 보고 맞추기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-0: #05070C;
+    --bg-1: #0A0F18;
+    --panel: #0E1521;
+    --panel-2: #121A28;
+    --line: #1E2C3F;
+    --line-soft: #16202E;
+    --ink: #E7EDF6;
+    --ink-dim: #7A8AA0;
+    --ink-faint: #4B5A70;
+    --cyan: #34E4E0;
+    --cyan-dim: rgba(52, 228, 224, 0.14);
+    --amber: #FFB238;
+    --amber-dim: rgba(255, 178, 56, 0.14);
+    --mint: #34E4A0;
+    --mint-dim: rgba(52, 228, 160, 0.14);
+    --red: #FF5470;
+    --red-dim: rgba(255, 84, 112, 0.14);
+    --radius-lg: 22px;
+    --radius-md: 14px;
+    --radius-sm: 9px;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% -10%, rgba(52,228,224,0.07), transparent 45%),
+      radial-gradient(circle at 100% 100%, rgba(255,178,56,0.05), transparent 40%),
+      var(--bg-0);
+    color: var(--ink);
+    font-family: 'Noto Sans KR', sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding: 20px;
+  }
+  .hud{ font-family:'Rajdhani', sans-serif; letter-spacing: 0.14em; text-transform: uppercase; }
+  .mono{ font-family:'JetBrains Mono', monospace; }
 
-        body {
-            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
-            background-color: #ffffff;
-            display: flex; justify-content: center; align-items: flex-start;
-            padding: 40px; margin: 0; gap: 40px;
-        }
+  .stage{ width:100%; max-width: 440px; }
+  .card{
+    background: linear-gradient(180deg, var(--panel) 0%, var(--bg-1) 100%);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+  .card::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(var(--line-soft) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+    background-size: 24px 24px;
+    opacity: 0.25;
+    pointer-events:none;
+  }
 
-        @media (max-width: 768px) {
-            body { flex-direction: column; align-items: center; padding: 20px 10px; gap: 20px; }
-            #phone-view { width: 340px !important; height: 720px !important; border-width: 8px; }
-            .controls { width: 340px !important; box-sizing: border-box; padding: 15px; }
-        }
+  /* ---------- Header ---------- */
+  .topbar{
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 18px 20px 12px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .brand{ display:flex; flex-direction:column; gap:2px; }
+  .brand .eyebrow{
+    font-size: 10px; font-weight:600; color: var(--cyan);
+    letter-spacing: 0.28em;
+  }
+  .brand .title{ font-size: 21px; font-weight:700; color: var(--ink); letter-spacing: 0.06em; }
+  .stat-pills{ display:flex; gap:8px; }
+  .pill{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight:700;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--cyan);
+    padding: 7px 11px;
+    border-radius: 8px;
+    letter-spacing: 0.03em;
+  }
+  .pill.score{ color: var(--amber); }
+  .pill .lbl{ color: var(--ink-faint); font-weight:600; margin-right:5px; font-size:10px; }
 
-        @keyframes msgFadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .msg-row { 
-            display: flex; align-items: flex-start; width: 100%; position: relative; transition: all 0.2s;
-            animation: msgFadeIn 0.3s ease-out forwards; 
-        }
+  /* ---------- Timer ---------- */
+  .timer-wrap{ padding: 12px 20px 0; position:relative; }
+  .timer-label{
+    display:flex; justify-content:space-between;
+    font-size: 10px; color: var(--ink-faint); font-weight:600;
+    letter-spacing: 0.18em; margin-bottom: 6px;
+  }
+  .timer-track{
+    height: 5px;
+    background: var(--panel-2);
+    border-radius: 999px;
+    overflow:hidden;
+    position:relative;
+    border: 1px solid var(--line-soft);
+  }
+  .timer-fill{
+    height:100%;
+    width:100%;
+    background: linear-gradient(90deg, var(--cyan), #7CF5D9);
+    box-shadow: 0 0 10px rgba(52,228,224,0.6);
+    transition: width 0.1s linear, background 0.3s ease;
+    border-radius: 999px;
+  }
+  .timer-fill.low{ background: linear-gradient(90deg, var(--red), var(--amber)); box-shadow: 0 0 10px rgba(255,84,112,0.6); }
 
-        .msg-row.mine + .msg-row.mine,
-        .msg-row.other + .msg-row.other { margin-top: -3px; }
-        .msg-row.other + .msg-row.other .profile-area { min-height: 0; }
+  /* ---------- Viewfinder ---------- */
+  .viewfinder-wrap{
+    position:relative;
+    margin: 18px auto 4px;
+    width: 288px;
+    height: 288px;
+  }
+  .viewfinder{
+    width:100%;
+    height:100%;
+    border-radius: 16px;
+    background: #01040A;
+    position:relative;
+    overflow:hidden;
+    border: 1px solid var(--line);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4), inset 0 0 40px rgba(0,0,0,0.6);
+  }
+  canvas#cropCanvas{
+    width:100%;
+    height:100%;
+    display:block;
+  }
+  .crosshair{
+    position:absolute; top:50%; left:50%;
+    width:1px; height:1px; pointer-events:none;
+  }
+  .crosshair::before, .crosshair::after{
+    content:""; position:absolute; background: rgba(52,228,224,0.55);
+  }
+  .crosshair::before{ width:14px; height:1px; top:0; left:-7px; }
+  .crosshair::after{ width:1px; height:14px; top:-7px; left:0; }
 
-        #phone-view {
-            width: 380px; height: 780px;
-            background-color: var(--bg-light-gray);
-            background-image: linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-            background-size: 20px 20px;
-            border: 12px solid #111; border-radius: 40px;
-            overflow: hidden; display: flex; flex-direction: column;
-            position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.1); flex-shrink: 0;
-        }
+  .bracket{
+    position:absolute;
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--cyan);
+    opacity: 0;
+    transform: scale(1.15);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events:none;
+    filter: drop-shadow(0 0 4px rgba(52,228,224,0.5));
+  }
+  .bracket.on{ opacity:0.95; transform: scale(1); }
+  .bracket.tl{ top:9px; left:9px; border-right:none; border-bottom:none; }
+  .bracket.tr{ top:9px; right:9px; border-left:none; border-bottom:none; }
+  .bracket.bl{ bottom:9px; left:9px; border-right:none; border-top:none; }
+  .bracket.br{ bottom:9px; right:9px; border-left:none; border-top:none; }
 
-        .header {
-            background-color: var(--point-orange);
-            background-image: radial-gradient(rgba(255,255,255,0.2) 15%, transparent 16%);
-            background-size: 15px 15px; color: white; padding: 12px 20px; position: relative; min-height: 90px;
-        }
+  .scan-line{
+    position:absolute; left:0; right:0; height: 60px; top:-60px;
+    background: linear-gradient(180deg, transparent, rgba(52,228,224,0.18), transparent);
+    pointer-events:none;
+  }
+  .scan-line.run{ animation: sweep 0.7s ease-out; }
+  @keyframes sweep{
+    0%{ top:-60px; }
+    100%{ top: 288px; }
+  }
 
-        .status-bar { font-size: 14px; margin-bottom: 10px; font-weight: bold; }
-        .chat-info { display: flex; align-items: center; font-size: 25px; font-weight: 700; z-index: 1; position: relative; margin-top: 40px;}
+  .readout{
+    position:absolute; left:10px; bottom:9px;
+    font-size: 10px; font-weight:600; letter-spacing: 0.14em;
+    color: var(--cyan); text-transform:uppercase;
+    text-shadow: 0 0 6px rgba(52,228,224,0.5);
+    pointer-events:none;
+  }
 
-        #chat-window { flex: 1; padding: 20px 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-        
-        .bubble {
-            padding: 8px 14px; border-radius: 18px; max-width: 85%;
-            font-size: 14px; line-height: 1.4; font-weight: 700;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1); word-break: break-all; cursor: pointer;
-        }
+  .feedback-banner{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    padding: 12px 14px;
+    font-size: 13px;
+    font-weight:700;
+    text-align:center;
+    color:#04140F;
+    background: transparent;
+    transform: translateY(100%);
+    transition: transform 0.25s cubic-bezier(.2,.8,.2,1);
+  }
+  .feedback-banner.show{ transform: translateY(0); }
+  .feedback-banner.correct{ background: var(--mint); color:#04241A; }
+  .feedback-banner.wrong{ background: var(--red); color:#2A0410; }
 
-        .bubble img {
-            max-width: 100%;
-            max-height: 300px;
-            border-radius: 10px;
-            display: block;
-            margin: 4px 0;
-        }
+  /* ---------- Zoom control ---------- */
+  .zoom-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap: 10px;
+    margin: 16px 0 2px;
+  }
+  .zoom-btn{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--cyan);
+    font-family:'Rajdhani', sans-serif;
+    font-weight:700;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    border-radius: 999px;
+    cursor:pointer;
+    transition: all 0.15s ease;
+  }
+  .zoom-btn:hover:not(:disabled){ border-color: var(--cyan); background: var(--cyan-dim); }
+  .zoom-btn:disabled{ opacity:0.35; cursor:default; }
+  .segs{ display:flex; gap:3px; }
+  .seg{ width:12px; height:5px; border-radius:2px; background: var(--line); transition: background 0.15s ease; }
+  .seg.used{ background: var(--cyan); box-shadow: 0 0 5px rgba(52,228,224,0.6); }
 
-        .other { justify-content: flex-start; }
-        .profile-area { width: 60px; margin-right: 8px; flex-shrink: 0; display: flex; justify-content: center; min-height: 55px; }
-        .profile-img { width: 55px; height: 55px; border-radius: 50%; border: 2px solid white; background: #eee; }
-        .other-content { display: flex; flex-direction: column; max-width: 80%; }
-        .other-name { font-size: 13px; margin-bottom: 4px; color: #444; font-weight: 700; }
-        .other .bubble { background: var(--other-bubble); border-top-left-radius: 4px; }
+  /* ---------- Search ---------- */
+  .search-area{ padding: 10px 20px 20px; position:relative; }
+  .search-input{
+    width:100%;
+    padding: 12px 14px 12px 30px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    color: var(--ink);
+    outline:none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .search-input::placeholder{ color: var(--ink-faint); font-family:'Noto Sans KR', sans-serif; }
+  .search-input:focus{ border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(52,228,224,0.12); }
+  .search-area::before{
+    content:"›"; position:absolute; left:34px; top:22px;
+    color: var(--cyan); font-family:'JetBrains Mono', monospace; font-weight:700; font-size:15px;
+    pointer-events:none;
+  }
+  .results{
+    margin-top: 10px;
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    max-height: 220px;
+    overflow-y:auto;
+  }
+  .result-card{
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 8px 6px 9px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    cursor:pointer;
+    transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+  }
+  .result-card:hover{ transform: translateY(-2px); border-color: var(--cyan); background: var(--cyan-dim); }
+  .result-card img{
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+    background: var(--bg-1);
+    border-radius: 8px;
+  }
+  .result-card span{
+    font-size: 11.5px;
+    font-weight:500;
+    color: var(--ink);
+    text-align:center;
+    line-height:1.2;
+  }
 
-        .mine { justify-content: flex-end; }
-        .mine .bubble { background: var(--user-bubble); color: white; border-top-right-radius: 4px; }
+  /* ---------- End screen ---------- */
+  .end-screen{ padding: 30px 24px 26px; text-align:center; position:relative; }
+  .end-eyebrow{ font-size:10px; font-weight:700; letter-spacing:0.32em; color: var(--cyan); margin-bottom:6px; }
+  .end-title{
+    font-family:'Rajdhani', sans-serif;
+    font-size: 26px;
+    font-weight:700;
+    letter-spacing: 0.05em;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+  .end-total{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 46px;
+    font-weight:800;
+    color: var(--amber);
+    margin: 12px 0 20px;
+    text-shadow: 0 0 22px rgba(255,178,56,0.35);
+  }
+  .round-list{
+    text-align:left;
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+    margin-bottom: 22px;
+  }
+  .round-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 13px;
+    font-size: 12.5px;
+  }
+  .round-item .rname{ font-weight:700; display:flex; align-items:center; gap:9px; color: var(--ink); }
+  .tag{
+    font-family:'Rajdhani', sans-serif;
+    font-size:10px; font-weight:700; letter-spacing:0.08em;
+    padding: 3px 7px; border-radius: 5px;
+  }
+  .tag.o{ background: var(--mint-dim); color: var(--mint); }
+  .tag.x{ background: var(--red-dim); color: var(--red); }
+  .round-item .rscore{ font-family:'JetBrains Mono', monospace; color: var(--ink-dim); font-weight:700; }
+  .replay-btn{
+    background: linear-gradient(135deg, var(--cyan), #1BA8A5);
+    color: #01201E;
+    border:none;
+    font-family:'Rajdhani', sans-serif;
+    font-weight:700;
+    font-size: 15px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 14px 0;
+    width:100%;
+    border-radius: 12px;
+    cursor:pointer;
+    transition: filter 0.15s ease, transform 0.1s ease;
+  }
+  .replay-btn:hover{ filter: brightness(1.08); }
+  .replay-btn:active{ transform: scale(0.98); }
 
-        .edit-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); display: none; z-index: 200;
-            flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;
-        }
-        .edit-box { background: white; padding: 15px; border-radius: 15px; width: 100%; }
-        .edit-box label { font-size: 11px; color: #888; display: block; margin-top: 5px; }
-        .edit-box input { width: 100%; padding: 10px; margin: 5px 0 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-weight: 700; }
-        .edit-actions { display: flex; flex-wrap: wrap; gap: 5px; }
-        .edit-actions button { flex: 1 1 45%; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
-
-        #char-grid {
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 55%;
-            background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(12px);
-            display: none; grid-template-columns: repeat(4, 1fr);
-            gap: 5px; padding: 10px; overflow-y: auto; z-index: 300; border-top: 1px solid rgba(255,157,0,0.3);
-        }
-        #char-grid img { width: 100%; border-radius: 10px; cursor: pointer; background: rgba(255,255,255,0.8); transition: 0.1s; }
-        #char-grid img:hover { transform: scale(1.05); }
-
-        .controls { width: 320px; padding: 25px; border: 1px solid #e0e0e0; border-radius: 20px; background: #fafafa; }
-        .toggle-container { display: flex; gap: 5px; margin-bottom: 15px; }
-        .toggle-btn { flex: 1; padding: 10px; background: #eee; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #666; }
-        .toggle-btn.active { background: var(--point-orange); color: white; }
-        input, button { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; margin-bottom: 10px; }
-        .send-btn { background: #333; color: white; border: none; font-weight: bold; cursor: pointer; }
-        .img-btn { background: #555; color: white; border: none; font-weight: bold; cursor: pointer; }
-        .save-btn { background: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; }
-        .clear-all-btn { background: #ff4d4d; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
-    </style>
+  .hidden{ display:none !important; }
+</style>
 </head>
 <body>
 
-    <div id="phone-view">
-        <div id="edit-overlay" class="edit-overlay">
-            <div class="edit-box">
-                <label>이름 수정</label>
-                <input type="text" id="edit-input-name">
-                <label>대사 수정</label>
-                <input type="text" id="edit-input-text">
-                <div class="edit-actions">
-                    <button onclick="applyEdit()" style="background:var(--point-orange); color:white;">적용</button>
-                    <button onclick="showCharGrid()" style="background:#eee;">프사/이름 변경</button>
-                    <button onclick="deleteMsg()" style="background:#ff4d4d; color:white;">삭제</button>
-                </div>
-            </div>
+<div class="stage">
+  <div class="card" id="gameCard">
+
+    <!-- ===== Game screen ===== -->
+    <div id="gameScreen">
+      <div class="topbar">
+        <div class="brand">
+          <div class="eyebrow hud">만든놈 : 광인</div>
+          <div class="title">니케 일부 보고 맞추기</div>
         </div>
-        <div id="char-grid"></div>
-        <div class="header">
-            <div class="status-bar" id="live-clock">00:00</div>
-            <div class="chat-info"><span class="back-btn">〈</span><span id="room-name-display">라피</span></div>
+        <div class="stat-pills">
+          <div class="pill" id="roundPill"><span class="lbl hud">라운드</span>1/7</div>
+          <div class="pill score" id="scorePill"><span class="lbl hud">점수</span>0</div>
         </div>
-        <div id="chat-window"></div>
+      </div>
+
+      <div class="timer-wrap">
+        <div class="timer-label hud"><span>남은시간</span><span id="timerNum">15.0s</span></div>
+        <div class="timer-track"><div class="timer-fill" id="timerFill"></div></div>
+      </div>
+
+      <div class="viewfinder-wrap">
+        <div class="viewfinder">
+          <canvas id="cropCanvas" width="360" height="360"></canvas>
+          <div class="scan-line" id="scanLine"></div>
+          <div class="crosshair"></div>
+          <div class="bracket tl" id="bTl"></div>
+          <div class="bracket tr" id="bTr"></div>
+          <div class="bracket bl" id="bBl"></div>
+          <div class="bracket br" id="bBr"></div>
+          <div class="readout hud" id="readout">Scanning</div>
+          <div class="feedback-banner" id="feedbackBanner"></div>
+        </div>
+      </div>
+
+      <div class="zoom-row">
+        <button class="zoom-btn" id="zoomBtn">
+          <span>범위 확장</span>
+          <span class="segs" id="zoomDots"></span>
+        </button>
+      </div>
+
+      <div class="search-area">
+        <input type="text" class="search-input" id="searchInput" placeholder="캐릭터 이름 입력" autocomplete="off">
+        <div class="results" id="resultsBox"></div>
+      </div>
     </div>
 
-    <div class="controls">
-        <label style="font-size:12px; font-weight:bold; color:#666;">채팅방 이름</label>
-        <input type="text" id="in-room-name" value="라피" oninput="document.getElementById('room-name-display').innerText=this.value">
-        <div class="toggle-container">
-            <button class="toggle-btn" id="btn-other" onclick="setSender('other')">상대방</button>
-            <button class="toggle-btn active" id="id-btn-mine" onclick="setSender('mine')">나</button>
-        </div>
-        <input type="text" id="in-msg" placeholder="대화 입력..." onkeypress="if(event.keyCode==13) addMessage()">
-        <button onclick="addMessage()" class="send-btn">보내기</button>
-        <input type="file" id="in-img" accept="image/*" style="display:none" onchange="uploadImage(this)">
-        <button onclick="document.getElementById('in-img').click()" class="img-btn">이미지 보내기</button>
-        <button onclick="saveAsImage()" class="save-btn">이미지로 저장</button>
-        <button onclick="clearAllMessages()" class="clear-all-btn">전체 삭제</button>
+    <!-- ===== End screen ===== -->
+    <div id="endScreen" class="end-screen hidden">
+      <div class="end-eyebrow hud">Mission Report</div>
+      <div class="end-title">결과 분석 완료</div>
+      <div class="end-total mono" id="endTotal">0</div>
+      <div class="round-list" id="roundList"></div>
+      <button class="replay-btn" id="replayBtn">재출격</button>
     </div>
 
-    <script>
-        const charData = [{id:"c010", name:"라피"}, {id:"c011", name:"네온"}, {id:"c012", name:"아니스"}, {id:"c013", name:"마리안"}, {id:"c014", name:"네온"}, {id:"c015", name:"아니스"}, {id:"c016", name:"라피"}, {id:"c017", name:"아니스"}, {id:"c020", name:"델타"}, {id:"c022", name:"시그널"}, {id:"c023", name:"델타"}, {id:"c030", name:"폴리"}, {id:"c032", name:"미란다"}, {id:"c033", name:"키리"}, {id:"c040", name:"D"}, {id:"c041", name:"K"}, {id:"c043", name:"D"}, {id:"c060", name:"벨로타"}, {id:"c061", name:"미카"}, {id:"c062", name:"미카"}, {id:"c070", name:"브리드"}, {id:"c071", name:"솔린"}, {id:"c072", name:"디젤"}, {id:"c073", name:"브리드"}, {id:"c074", name:"솔린"}, {id:"c075", name:"디젤"}, {id:"c080", name:"센티"}, {id:"c082", name:"리타"}, {id:"c090", name:"엠마"}, {id:"c091", name:"베스티"}, {id:"c092", name:"은화"}, {id:"c093", name:"엠마"}, {id:"c094", name:"베스티"}, {id:"c095", name:"은화"}, {id:"c100", name:"라플라스"}, {id:"c101", name:"드레이크"}, {id:"c102", name:"맥스웰"}, {id:"c103", name:"라플라스"}, {id:"c104", name:"드레이크"}, {id:"c105", name:"맥스웰"}, {id:"c110", name:"크로우"}, {id:"c111", name:"자칼"}, {id:"c112", name:"바이퍼"}, {id:"c120", name:"N102"}, {id:"c121", name:"앤"}, {id:"c130", name:"메어리"}, {id:"c131", name:"페퍼"}, {id:"c132", name:"메어리"}, {id:"c140", name:"슈가"}, {id:"c141", name:"밀크"}, {id:"c142", name:"프림"}, {id:"c143", name:"밀크"}, {id:"c150", name:"율리아"}, {id:"c160", name:"유니"}, {id:"c161", name:"미하라"}, {id:"c162", name:"미하라"}, {id:"c170", name:"프리바티"}, {id:"c171", name:"율하"}, {id:"c172", name:"에드미"}, {id:"c180", name:"길로틴"}, {id:"c181", name:"메이든"}, {id:"c182", name:"길로틴"}, {id:"c183", name:"메이든"}, {id:"c190", name:"루드밀라"}, {id:"c191", name:"앨리스"}, {id:"c192", name:"토브"}, {id:"c193", name:"네베"}, {id:"c194", name:"루드밀라"}, {id:"c195", name:"앨리스"}, {id:"c200", name:"루피"}, {id:"c201", name:"얀"}, {id:"c202", name:"도라"}, {id:"c203", name:"루피"}, {id:"c210", name:"엑시아"}, {id:"c212", name:"노벨"}, {id:"c220", name:"스노우화이트"}, {id:"c221", name:"라푼젤"}, {id:"c222", name:"홍련"}, {id:"c223", name:"나유타"}, {id:"c224", name:"스노우화이트"}, {id:"c225", name:"홍련"}, {id:"c226", name:"라푼젤"}, {id:"c230", name:"하란"}, {id:"c231", name:"이사벨"}, {id:"c232", name:"노아"}, {id:"c233", name:"도로시"}, {id:"c234", name:"도로시"}, {id:"c240", name:"루마니"}, {id:"c241", name:"에피넬"}, {id:"c242", name:"폴크방"}, {id:"c260", name:"모더니아"}, {id:"c261", name:"농ㅋㅋ"}, {id:"c262", name:"리버렐리오"}, {id:"c263", name:"인디빌리아"}, {id:"c270", name:"블랑"}, {id:"c271", name:"누아르"}, {id:"c272", name:"루주"}, {id:"c280", name:"로산나"}, {id:"c281", name:"목단"}, {id:"c282", name:"사쿠라"}, {id:"c283", name:"로산나"}, {id:"c284", name:"사쿠라"}, {id:"c290", name:"마나"}, {id:"c291", name:"에테르"}, {id:"c300", name:"솔져EG"}, {id:"c301", name:"솔져FA"}, {id:"c302", name:"프로덕트08"}, {id:"c303", name:"프로덕트12"}, {id:"c304", name:"iDoll플라워"}, {id:"c305", name:"iDoll오션"}, {id:"c306", name:"솔져OW"}, {id:"c307", name:"피나"}, {id:"c308", name:"iDoll썬"}, {id:"c310", name:"에이드"}, {id:"c311", name:"코코아"}, {id:"c312", name:"소다"}, {id:"c313", name:"프리바티"}, {id:"c314", name:"소다"}, {id:"c315", name:"에이드"}, {id:"c321", name:"마르차나"}, {id:"c330", name:"크라운"}, {id:"c331", name:"차임"}, {id:"c350", name:"마스트"}, {id:"c351", name:"앵커"}, {id:"c352", name:"헬름"}, {id:"c353", name:"헬름"}, {id:"c354", name:"마스트"}, {id:"c355", name:"앵커"}, {id:"c361", name:"탈로스"}, {id:"c370", name:"이터니티"}, {id:"c371", name:"엔드리스"}, {id:"c380", name:"네로"}, {id:"c381", name:"비스킷"}, {id:"c382", name:"레오나"}, {id:"c390", name:"츠바이"}, {id:"c391", name:"아인"}, {id:"c392", name:"라이"}, {id:"c400", name:"길티"}, {id:"c401", name:"신"}, {id:"c402", name:"퀀시"}, {id:"c403", name:"퀀시"}, {id:"c411", name:"플로라"}, {id:"c412", name:"트리나"}, {id:"c430", name:"노이즈"}, {id:"c431", name:"볼륨"}, {id:"c432", name:"아리아"}, {id:"c440", name:"아이리"}, {id:"c441", name:"아비스타"}, {id:"c450", name:"나가"}, {id:"c451", name:"티아"}, {id:"c470", name:"레드후드"}, {id:"c480", name:"리버린"}, {id:"c481", name:"프레자일"}, {id:"c482", name:"로지"}, {id:"c490", name:"해머링"}, {id:"c491", name:"드릴리"}, {id:"c500", name:"일레그"}, {id:"c501", name:"트로니"}, {id:"c502", name:"일레그"}, {id:"c511", name:"신데렐라"}, {id:"c513", name:"세이렌"}, {id:"c514", name:"그레이브"}, {id:"c520", name:"브래디"}, {id:"c521", name:"크러스트"}, {id:"c530", name:"스카이"}, {id:"c531", name:"시엘로"}, {id:"c532", name:"소라"}, {id:"c550", name:"베이"}, {id:"c551", name:"클레이"}, {id:"c560", name:"베히모스"}, {id:"c561", name:"지즈"}, {id:"c562", name:"레비아탄"}, {id:"c563", name:"바하무트"}, {id:"c570", name:"아크레인저:블랙"}, {id:"c580", name:"팬텀"}, {id:"c581", name:"아르카나"}, {id:"c590", name:"모리"}, {id:"c600", name:"민트"}, {id:"c601", name:"프리카"}, {id:"c850", name:"이브"}, {id:"c851", name:"레이븐"}, {id:"c852", name:"릴리"}, {id:"c900", name:"잉그리드"}, {id:"c901", name:"슈엔"}, {id:"c902", name:"머스탱"}, {id:"c903", name:"앤더슨"}, {id:"c904", name:"에닉"}, {id:"c905", name:"리안"}, {id:"c907", name:"시프티"}, {id:"c908", name:"파피용"}, {id:"c914", name:"버닝엄"}, {id:"c916", name:"남성 지휘관"}, {id:"c917", name:"여성지휘관"}, {id:"c918", name:"스캐빈저1"}, {id:"c919", name:"스캐빈저2"}, {id:"c920", name:"마피아"}, {id:"c925", name:"요한"}, {id:"c928", name:"잉크"}, {id:"c929", name:"세실"}, {id:"c930", name:"아니이름뭐였지"}, {id:"c933", name:"볼트"}, {id:"c934", name:"안젤리나"}, {id:"c935", name:"이름뭐였지"}, {id:"c939", name:"도반"}, {id:"c940", name:"E.H."}, {id:"c941", name:"피나"}, {id:"c942", name:"갓데스의 지휘관"}, {id:"c943", name:"릴리바이스"}, {id:"c944", name:"신데렐라"}, {id:"c946", name:"고양이"}, {id:"c961", name:"오스왈드"}, {id:"c965", name:"홍련"}, {id:"c966", name:"라푼젤"}, {id:"c971", name:"장화"}, {id:"c973", name:"지엔"}, {id:"c975", name:"티미"}, {id:"c977", name:"킬로"}, {id:"c979", name:"에이브"}, {id:"c980", name:"헨젤"}, {id:"c981", name:"그레텔"}, {id:"c982", name:"레드슈즈"}, {id:"c991", name:"D.E.E.P."}, {id:"c992", name:"온리원"}, {id:"c993", name:"메카 시프티"}];
+  </div>
+</div>
 
-        let currentSender = 'mine', currentId = "c010", editingRow = null, tempCharId = "c010";
+<script>
+/* ======================================================
+   캐릭터 데이터 (여기에 원하는 만큼 추가하세요)
+   ====================================================== */
+const charData = [{id:"c010", name:"라피"}, {id:"c011", name:"네온"}, {id:"c012", name:"아니스"}, {id:"c013", name:"마리안"}, {id:"c014", name:"네온"}, {id:"c015", name:"아니스"}, {id:"c016", name:"라피"}, {id:"c017", name:"아니스"}, {id:"c020", name:"델타"}, {id:"c022", name:"시그널"}, {id:"c023", name:"델타"}, {id:"c030", name:"폴리"}, {id:"c032", name:"미란다"}, {id:"c033", name:"키리"}, {id:"c040", name:"D"}, {id:"c041", name:"K"}, {id:"c043", name:"D"}, {id:"c060", name:"벨로타"}, {id:"c061", name:"미카"}, {id:"c062", name:"미카"}, {id:"c070", name:"브리드"}, {id:"c071", name:"솔린"}, {id:"c072", name:"디젤"}, {id:"c073", name:"브리드"}, {id:"c074", name:"솔린"}, {id:"c075", name:"디젤"}, {id:"c080", name:"센티"}, {id:"c082", name:"리타"}, {id:"c090", name:"엠마"}, {id:"c091", name:"베스티"}, {id:"c092", name:"은화"}, {id:"c093", name:"엠마"}, {id:"c094", name:"베스티"}, {id:"c095", name:"은화"}, {id:"c100", name:"라플라스"}, {id:"c101", name:"드레이크"}, {id:"c102", name:"맥스웰"}, {id:"c103", name:"라플라스"}, {id:"c104", name:"드레이크"}, {id:"c105", name:"맥스웰"}, {id:"c110", name:"크로우"}, {id:"c111", name:"자칼"}, {id:"c112", name:"바이퍼"}, {id:"c120", name:"N102"}, {id:"c121", name:"앤"}, {id:"c130", name:"메어리"}, {id:"c131", name:"페퍼"}, {id:"c132", name:"메어리"}, {id:"c140", name:"슈가"}, {id:"c141", name:"밀크"}, {id:"c142", name:"프림"}, {id:"c143", name:"밀크"}, {id:"c150", name:"율리아"}, {id:"c160", name:"유니"}, {id:"c161", name:"미하라"}, {id:"c162", name:"미하라"}, {id:"c170", name:"프리바티"}, {id:"c171", name:"율하"}, {id:"c172", name:"애드미"}, {id:"c180", name:"길로틴"}, {id:"c181", name:"메이든"}, {id:"c182", name:"길로틴"}, {id:"c183", name:"메이든"}, {id:"c190", name:"루드밀라"}, {id:"c191", name:"앨리스"}, {id:"c192", name:"토브"}, {id:"c193", name:"네베"}, {id:"c194", name:"루드밀라"}, {id:"c195", name:"앨리스"}, {id:"c200", name:"루피"}, {id:"c201", name:"얀"}, {id:"c202", name:"도라"}, {id:"c203", name:"루피"}, {id:"c210", name:"엑시아"}, {id:"c212", name:"노벨"}, {id:"c220", name:"스노우화이트"}, {id:"c221", name:"라푼젤"}, {id:"c222", name:"홍련"}, {id:"c223", name:"나유타"}, {id:"c224", name:"스노우화이트"}, {id:"c225", name:"홍련"}, {id:"c226", name:"라푼젤"}, {id:"c230", name:"하란"}, {id:"c231", name:"이사벨"}, {id:"c232", name:"노아"}, {id:"c233", name:"도로시"}, {id:"c234", name:"도로시"}, {id:"c240", name:"루마니"}, {id:"c241", name:"에피넬"}, {id:"c242", name:"폴크방"}, {id:"c260", name:"모더니아"}, {id:"c261", name:"니힐"}, {id:"c262", name:"리버렐리오"}, {id:"c263", name:"인디빌리아"}, {id:"c270", name:"블랑"}, {id:"c271", name:"누아르"}, {id:"c272", name:"루주"}, {id:"c280", name:"로산나"}, {id:"c281", name:"목단"}, {id:"c282", name:"사쿠라"}, {id:"c283", name:"로산나"}, {id:"c284", name:"사쿠라"}, {id:"c290", name:"마나"}, {id:"c291", name:"에테르"}, {id:"c300", name:"솔져EG"}, {id:"c301", name:"솔져FA"}, {id:"c302", name:"프로덕트08"}, {id:"c303", name:"프로덕트12"}, {id:"c304", name:"iDoll플라워"}, {id:"c305", name:"iDoll오션"}, {id:"c306", name:"솔져OW"}, {id:"c307", name:"피나"}, {id:"c308", name:"iDoll썬"}, {id:"c310", name:"에이드"}, {id:"c311", name:"코코아"}, {id:"c312", name:"소다"}, {id:"c313", name:"프리바티"}, {id:"c314", name:"소다"}, {id:"c315", name:"에이드"}, {id:"c321", name:"마르차나"}, {id:"c330", name:"크라운"}, {id:"c331", name:"차임"}, {id:"c350", name:"마스트"}, {id:"c351", name:"앵커"}, {id:"c352", name:"헬름"}, {id:"c353", name:"헬름"}, {id:"c354", name:"마스트"}, {id:"c355", name:"앵커"}, {id:"c361", name:"탈로스"}, {id:"c370", name:"이터니티"}, {id:"c371", name:"엔드리스"}, {id:"c380", name:"네로"}, {id:"c381", name:"비스킷"}, {id:"c382", name:"레오나"}, {id:"c390", name:"츠바이"}, {id:"c391", name:"아인"}, {id:"c392", name:"라이"}, {id:"c400", name:"길티"}, {id:"c401", name:"신"}, {id:"c402", name:"퀀시"}, {id:"c403", name:"퀀시"}, {id:"c411", name:"플로라"}, {id:"c412", name:"트리나"}, {id:"c430", name:"노이즈"}, {id:"c431", name:"볼륨"}, {id:"c432", name:"아리아"}, {id:"c440", name:"아이리"}, {id:"c441", name:"아비스타"}, {id:"c450", name:"나가"}, {id:"c451", name:"티아"}, {id:"c470", name:"레드후드"}, {id:"c480", name:"리버린"}, {id:"c481", name:"프레자일"}, {id:"c482", name:"로지"}, {id:"c490", name:"해머링"}, {id:"c491", name:"드릴리"}, {id:"c500", name:"일레그"}, {id:"c501", name:"트로니"}, {id:"c502", name:"일레그"}, {id:"c511", name:"신데렐라"}, {id:"c513", name:"세이렌"}, {id:"c514", name:"그레이브"}, {id:"c520", name:"브래디"}, {id:"c521", name:"크러스트"}, {id:"c530", name:"스카이"}, {id:"c531", name:"시엘로"}, {id:"c532", name:"소라"}, {id:"c550", name:"베이"}, {id:"c551", name:"클레이"}, {id:"c560", name:"베히모스"}, {id:"c561", name:"지즈"}, {id:"c562", name:"레비아탄"}, {id:"c563", name:"바하무트"}, {id:"c570", name:"아크레인저:블랙"}, {id:"c580", name:"팬텀"}, {id:"c581", name:"아르카나"}, {id:"c590", name:"모리"}, {id:"c600", name:"민트"}, {id:"c601", name:"프리카"}, {id:"c850", name:"이브"}, {id:"c900", name:"잉그리드"}, {id:"c901", name:"슈엔"}, {id:"c902", name:"머스탱"}, {id:"c903", name:"앤더슨"}, {id:"c904", name:"에닉"}, {id:"c907", name:"시프티"}, {id:"c908", name:"파피용"}, {id:"c928", name:"잉크"}, {id:"c929", name:"세실"}, {id:"c933", name:"볼트"}, {id:"c943", name:"릴리바이스"}, {id:"c944", name:"신데렐라"}, {id:"c961", name:"오스왈드"}, {id:"c965", name:"홍련"}, {id:"c966", name:"라푼젤"}, {id:"c971", name:"장화"}, {id:"c973", name:"지엔"}, {id:"c975", name:"티미"}, {id:"c977", name:"킬로"}, {id:"c979", name:"에이브"}, {id:"c980", name:"헨젤"}, {id:"c981", name:"그레텔"}, {id:"c982", name:"레드슈즈"}, {id:"c991", name:"D.E.E.P."}, {id:"c992", name:"온리원"}, {id:"c993", name:"메카 시프티"}];
 
-        setInterval(() => {
-            const d = new Date();
-            document.getElementById('live-clock').innerText = d.getHours() + ":" + (d.getMinutes()<10?'0':'') + d.getMinutes();
-        }, 1000);
+/* ======================================================
+   설정값
+   ====================================================== */
+const ROUND_TIME   = 99000;   // 라운드당 제한시간(ms)
+const MAX_ZOOM_USE = 3;       // 라운드당 "범위 확장" 사용 가능 횟수 (3회째에 전체 그림 공개)
+const VP           = 360;     // 표시 캔버스 크기(px)
+const ZOOM_FRACTIONS = [0.10, 0.16, 0.32, 1.0]; // level 0~3, level3=전체
+const ALPHA_THRESH  = 20;     // 이 값보다 큰 alpha를 "불투명"으로 취급
+const MIN_OPAQUE_RATIO = 0.5; // 최초 화면에서 요구되는 최소 불투명 비율
 
-        const grid = document.getElementById('char-grid');
-        charData.forEach(char => {
-            const img = document.createElement('img');
-            img.src = `https://nikke-db-legacy.pages.dev/images/sprite/si_${char.id}_00_s.png`;
-            img.onclick = () => {
-                tempCharId = char.id;
-                document.getElementById('edit-input-name').value = char.name;
-                grid.style.display = 'none';
-            };
-            grid.appendChild(img);
-        });
+const imgUrl    = id => `https://static.dotgg.gg/nikke/characters/${id}_00.webp`;
+const spriteUrl = id => `https://nikke-db-legacy.pages.dev/images/sprite/si_${id}_00_s.png`;
 
-        function reorderLayouts() {
-            const rows = document.querySelectorAll('.msg-row');
-            let lastOtherName = "";
-            rows.forEach(row => {
-                if(row.classList.contains('other')) {
-                    const nameEl = row.querySelector('.other-name');
-                    const profileArea = row.querySelector('.profile-area');
-                    const currentName = nameEl ? nameEl.dataset.originName || nameEl.innerText : "";
-                    if(currentName === lastOtherName) {
-                        if(nameEl) nameEl.style.display = 'none';
-                        if(profileArea) profileArea.innerHTML = "";
-                    } else {
-                        if(nameEl) nameEl.style.display = 'block';
-                        const cid = row.dataset.charId || "c010";
-                        if(profileArea) profileArea.innerHTML = `<img src="https://nikke-db-legacy.pages.dev/images/sprite/si_${cid}_00_s.png" class="profile-img">`;
-                        lastOtherName = currentName;
-                    }
-                } else { lastOtherName = "MYSELF"; }
-            });
+/* ======================================================
+   상태
+   ====================================================== */
+let ROUND_COUNT = Math.min(7, charData.length);
+let sequence = [];
+let reserveQueue = [];
+let roundIndex = 0;
+let totalScore = 0;
+let roundResults = [];
+
+let currentChar = null;
+let currentImg = null;
+let currentMeta = null;   // {bbox, data, w, h} - 픽셀 분석 결과
+let currentBBox = null;
+let currentCenter = null;
+let zoomLevel = 0;
+let roundActive = false;
+let roundStartTime = 0;
+let timerHandle = null;
+
+/* ======================================================
+   DOM 참조
+   ====================================================== */
+const gameScreen    = document.getElementById('gameScreen');
+const endScreen      = document.getElementById('endScreen');
+const roundPill      = document.getElementById('roundPill');
+const scorePill      = document.getElementById('scorePill');
+const timerFill      = document.getElementById('timerFill');
+const timerNum       = document.getElementById('timerNum');
+const cropCanvas     = document.getElementById('cropCanvas');
+const cropCtx        = cropCanvas.getContext('2d');
+const feedbackBanner = document.getElementById('feedbackBanner');
+const zoomBtn        = document.getElementById('zoomBtn');
+const zoomDots       = document.getElementById('zoomDots');
+const searchInput    = document.getElementById('searchInput');
+const resultsBox     = document.getElementById('resultsBox');
+const endTotal       = document.getElementById('endTotal');
+const roundList      = document.getElementById('roundList');
+const replayBtn      = document.getElementById('replayBtn');
+const scanLine       = document.getElementById('scanLine');
+const readout        = document.getElementById('readout');
+const brackets       = [document.getElementById('bTl'), document.getElementById('bTr'), document.getElementById('bBl'), document.getElementById('bBr')];
+
+const analysisCanvas = document.createElement('canvas');
+const analysisCtx    = analysisCanvas.getContext('2d', { willReadFrequently:true });
+
+/* ======================================================
+   유틸
+   ====================================================== */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+// 이미지를 분석해 비-투명 영역(바운딩 박스)과, 가능하다면 픽셀 alpha 데이터를 반환.
+// corsOk가 true인데도 픽셀 읽기가 막히면(예외적 상황) data=null로 안전하게 폴백.
+function analyzeImage(img, corsOk){
+  const w = img.naturalWidth, h = img.naturalHeight;
+  analysisCanvas.width = w;
+  analysisCanvas.height = h;
+  analysisCtx.clearRect(0,0,w,h);
+  analysisCtx.drawImage(img,0,0);
+
+  let data = null;
+  if(corsOk){
+    try{ data = analysisCtx.getImageData(0,0,w,h).data; }
+    catch(e){ data = null; }
+  }
+
+  if(data){
+    let minX=w, minY=h, maxX=0, maxY=0, found=false;
+    const step = 3;
+    for(let y=0;y<h;y+=step){
+      for(let x=0;x<w;x+=step){
+        if(data[(y*w+x)*4+3] > ALPHA_THRESH){
+          found = true;
+          if(x<minX)minX=x; if(x>maxX)maxX=x;
+          if(y<minY)minY=y; if(y>maxY)maxY=y;
         }
+      }
+    }
+    if(found && (maxX-minX)>10 && (maxY-minY)>10){
+      return { bbox:{x:minX, y:minY, w:(maxX-minX), h:(maxY-minY)}, data, w, h };
+    }
+  }
+  // 픽셀 분석 불가 시 안전한 기본값
+  return { bbox:{x:w*0.08, y:h*0.02, w:w*0.84, h:h*0.96}, data:null, w, h };
+}
 
-        function setSender(type) {
-            currentSender = type;
-            document.getElementById('id-btn-mine').classList.toggle('active', type === 'mine');
-            document.getElementById('btn-other').classList.toggle('active', type === 'other');
-        }
+// rect 영역 내 불투명 픽셀 비율 추정 (data가 없으면 검증 불가 -> 1로 간주)
+function opaqueRatio(meta, rect, grid=10){
+  if(!meta.data) return 1;
+  let count=0, total=0;
+  for(let i=0;i<grid;i++){
+    for(let j=0;j<grid;j++){
+      const px = Math.floor(rect.sx + (i+0.5)/grid*rect.sw);
+      const py = Math.floor(rect.sy + (j+0.5)/grid*rect.sh);
+      if(px<0||py<0||px>=meta.w||py>=meta.h) continue;
+      total++;
+      if(meta.data[(py*meta.w+px)*4+3] > ALPHA_THRESH) count++;
+    }
+  }
+  return total ? count/total : 0;
+}
 
-        function uploadImage(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    addMessage(e.target.result, true);
-                };
-                reader.readAsDataURL(input.files[0]);
-                input.value = '';
-            }
-        }
+// 최초(level 0) 화면이 절반 이상 불투명하도록 무작위 후보 중에서 선택
+function pickCenter(meta){
+  const bbox = meta.bbox;
+  let best = null, bestRatio = -1;
+  for(let a=0; a<50; a++){
+    const cx = bbox.x + bbox.w*(0.14 + Math.random()*0.72);
+    const cy = bbox.y + bbox.h*(0.10 + Math.random()*0.80);
+    const rect = getCropRect(bbox, 0, {x:cx, y:cy});
+    const ratio = opaqueRatio(meta, rect);
+    if(ratio >= MIN_OPAQUE_RATIO) return {x:cx, y:cy};
+    if(ratio > bestRatio){ bestRatio = ratio; best = {x:cx, y:cy}; }
+  }
+  return best || {x: bbox.x + bbox.w/2, y: bbox.y + bbox.h/2};
+}
 
-        function addMessage(content = null, isImage = false) {
-            const text = content || document.getElementById('in-msg').value;
-            if(!text) return;
+function getCropRect(bbox, level, center){
+  if(level >= 3){
+    return {sx:bbox.x, sy:bbox.y, sw:bbox.w, sh:bbox.h};
+  }
+  const minDim = Math.min(bbox.w, bbox.h);
+  const size = minDim * ZOOM_FRACTIONS[level];
+  let sx = center.x - size/2;
+  let sy = center.y - size/2;
+  sx = Math.max(bbox.x, Math.min(sx, bbox.x + bbox.w - size));
+  sy = Math.max(bbox.y, Math.min(sy, bbox.y + bbox.h - size));
+  return {sx, sy, sw:size, sh:size};
+}
 
-            const charInfo = charData.find(c => c.id === currentId);
-            const chatWin = document.getElementById('chat-window');
-            const row = document.createElement('div');
-            row.className = `msg-row ${currentSender}`;
-            row.dataset.charId = currentId;
-            row.onclick = () => openEdit(row);
+function renderCrop(){
+  const rect = getCropRect(currentBBox, zoomLevel, currentCenter);
+  cropCtx.clearRect(0,0,VP,VP);
+  cropCtx.drawImage(currentImg, rect.sx, rect.sy, rect.sw, rect.sh, 0, 0, VP, VP);
+}
 
-            const bubbleContent = isImage ? `<img src="${text}">` : text;
+function renderZoomDots(){
+  zoomDots.innerHTML = '';
+  for(let i=0;i<MAX_ZOOM_USE;i++){
+    const d = document.createElement('span');
+    d.className = 'seg' + (i < zoomLevel ? ' used' : '');
+    zoomDots.appendChild(d);
+  }
+  zoomBtn.disabled = zoomLevel >= MAX_ZOOM_USE || !roundActive;
+}
 
-            if(currentSender === 'other') {
-                row.innerHTML = `<div class="profile-area"></div><div class="other-content"><div class="other-name" data-origin-name="${charInfo.name}">${charInfo.name}</div><div class="bubble">${bubbleContent}</div></div>`;
-            } else {
-                row.innerHTML = `<div class="bubble">${bubbleContent}</div>`;
-            }
+function calcScore(elapsedMs, zoomUses){
+  const timeRatio = Math.max(0, Math.min(1, 1 - elapsedMs/ROUND_TIME));
+  const base = 400 + timeRatio*600;
+  const penalty = zoomUses*120;
+  return Math.max(50, Math.round(base - penalty));
+}
 
-            chatWin.appendChild(row);
-            reorderLayouts();
-            chatWin.scrollTop = chatWin.scrollHeight;
-            if(!isImage) document.getElementById('in-msg').value = '';
-        }
+/* ======================================================
+   라운드 진행
+   ====================================================== */
+function startGame(){
+  totalScore = 0;
+  roundResults = [];
+  roundIndex = 0;
+  ROUND_COUNT = Math.min(7, charData.length);
+  const allShuffled = shuffle(charData);
+  sequence = allShuffled.slice(0, ROUND_COUNT);
+  reserveQueue = allShuffled.slice(ROUND_COUNT); // 이미지 로드 실패 시 대체용 예비 풀
+  endScreen.classList.add('hidden');
+  gameScreen.classList.remove('hidden');
+  scorePill.innerHTML = '<span class="lbl hud">점수</span>0';
+  startRound();
+}
 
-        function openEdit(row) {
-            editingRow = row;
-            tempCharId = row.dataset.charId || currentId;
-            const bubble = row.querySelector('.bubble');
-            const nameEl = row.querySelector('.other-name');
-            
-            document.getElementById('edit-overlay').style.display = 'flex';
-            
-            if(bubble.querySelector('img')) {
-                document.getElementById('edit-input-text').value = "[이미지 메시지]";
-                document.getElementById('edit-input-text').disabled = true;
-            } else {
-                document.getElementById('edit-input-text').value = bubble.innerText;
-                document.getElementById('edit-input-text').disabled = false;
-            }
-            
-            document.getElementById('edit-input-name').value = nameEl ? (nameEl.dataset.originName || nameEl.innerText) : "";
-            document.getElementById('edit-input-name').disabled = !row.classList.contains('other');
-        }
+function startRound(){
+  clearInterval(timerHandle);
+  currentChar = sequence[roundIndex];
+  roundActive = false;
+  zoomLevel = 0;
+  feedbackBanner.className = 'feedback-banner';
+  feedbackBanner.textContent = '';
+  searchInput.value = '';
+  resultsBox.innerHTML = '';
+  roundPill.innerHTML = `<span class="lbl hud">라운드</span>${roundIndex+1}/${ROUND_COUNT}`;
+  brackets.forEach(b => b.classList.remove('on'));
+  readout.textContent = 'Scanning';
+  renderZoomDots();
 
-        function applyEdit() {
-            if(!editingRow) return;
-            const nameInput = document.getElementById('edit-input-name');
-            const textInput = document.getElementById('edit-input-text');
+  cropCtx.clearRect(0,0,VP,VP);
+  attemptLoad(true);
+}
 
-            if(!textInput.disabled) {
-                editingRow.querySelector('.bubble').innerText = textInput.value;
-            }
+// useCors=true: crossOrigin="anonymous"로 시도 (성공 시 픽셀 분석 가능)
+// 실패하면 useCors=false로 재시도 (표시는 정상 동작, 분석은 폴백)
+function attemptLoad(useCors){
+  const img = new Image();
+  if(useCors) img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    const meta = analyzeImage(img, useCors);
+    currentImg = img;
+    currentMeta = meta;
+    currentBBox = meta.bbox;
+    currentCenter = pickCenter(meta);
+    renderCrop();
+    roundActive = true;
+    renderZoomDots();
+    roundStartTime = Date.now();
+    scanLine.classList.remove('run'); void scanLine.offsetWidth; scanLine.classList.add('run');
+    brackets.forEach(b => b.classList.add('on'));
+    readout.textContent = '. Target Locked';
+    runTimer();
+    searchInput.focus();
+  };
+  img.onerror = () => {
+    if(useCors){ attemptLoad(false); return; }
+    handleImageFailure();
+  };
+  img.src = imgUrl(currentChar.id);
+}
 
-            if(editingRow.classList.contains('other')) {
-                const nameEl = editingRow.querySelector('.other-name');
-                if(nameEl) {
-                    nameEl.innerText = nameInput.value;
-                    nameEl.dataset.originName = nameInput.value;
-                }
-                editingRow.dataset.charId = tempCharId;
-            }
-            reorderLayouts();
-            closeEdit();
-        }
+// 이미지가 끝내 로드되지 않을 때: 플레이해보지도 못한 캐릭터를 "오답"으로 처리하지 않고
+// 예비 캐릭터로 조용히 교체하거나(우선), 예비가 없으면 해당 라운드를 점수 집계 없이 건너뜀.
+function handleImageFailure(){
+  if(reserveQueue.length > 0){
+    const idx = Math.floor(Math.random() * reserveQueue.length);
+currentChar = reserveQueue.splice(idx, 1)[0];
+    sequence[roundIndex] = currentChar;
+    attemptLoad(true);
+  }else{
+    sequence.splice(roundIndex, 1);
+    ROUND_COUNT = sequence.length;
+    if(sequence.length === 0){ showEndScreen(); return; }
+    if(roundIndex >= sequence.length) roundIndex = sequence.length - 1;
+    startRound();
+  }
+}
 
-        function deleteMsg() { if(editingRow) editingRow.remove(); reorderLayouts(); closeEdit(); }
-        
-        function clearAllMessages() {
-            if(confirm("모든 대화를 삭제하시겠습니까?")) {
-                document.getElementById('chat-window').innerHTML = "";
-            }
-        }
+function runTimer(){
+  timerFill.style.width = '100%';
+  timerFill.classList.remove('low');
+  timerHandle = setInterval(() => {
+    const elapsed = Date.now() - roundStartTime;
+    const remain = Math.max(0, ROUND_TIME - elapsed);
+    const pct = Math.max(0, 100 - (elapsed/ROUND_TIME)*100);
+    timerFill.style.width = pct + '%';
+    timerNum.textContent = (remain/1000).toFixed(1) + 's';
+    if(pct < 25) timerFill.classList.add('low');
+    if(elapsed >= ROUND_TIME){
+      clearInterval(timerHandle);
+      timeUp();
+    }
+  }, 80);
+}
 
-        function showCharGrid() { grid.style.display = 'grid'; }
-        function closeEdit() { 
-            document.getElementById('edit-overlay').style.display = 'none'; 
-            grid.style.display = 'none'; 
-            editingRow = null; 
-        }
+function timeUp(){
+  if(!roundActive) return;
+  roundActive = false;
+  zoomLevel = 3;
+  renderCrop();
+  renderZoomDots();
+  readout.textContent = 'Time Out';
+  showFeedback(false, 0);
+  roundResults.push({char: currentChar, correct:false, elapsed:ROUND_TIME, score:0});
+  scheduleNext();
+}
 
-        function saveAsImage() {
-            const phoneView = document.getElementById('phone-view');
-            html2canvas(phoneView, {
-                useCORS: true,
-                backgroundColor: null,
-                scale: 2 
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `blabla_${new Date().getTime()}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            });
-        }
+function submitAnswer(pickedId){
+  if(!roundActive) return;
+  clearInterval(timerHandle);
+  roundActive = false;
+  const elapsed = Date.now() - roundStartTime;
+  const correct = pickedId === currentChar.id;
+  const score = correct ? calcScore(elapsed, zoomLevel) : 0;
+  totalScore += score;
+  scorePill.innerHTML = `<span class="lbl hud">점수</span>${totalScore}`;
 
-        document.getElementById('edit-overlay').onclick = (e) => { if(e.target.id === 'edit-overlay') closeEdit(); };
-    </script>
+  zoomLevel = 3;
+  renderCrop();
+  renderZoomDots();
+  readout.textContent = correct ? 'Confirmed' : 'Mismatch';
+  showFeedback(correct, score);
+  roundResults.push({char: currentChar, correct, elapsed, score});
+  scheduleNext();
+}
+
+function showFeedback(correct, score){
+  feedbackBanner.className = 'feedback-banner show ' + (correct ? 'correct' : 'wrong');
+  if(correct){
+    feedbackBanner.textContent = `LOCK ON · ${currentChar.name} · +${score}`;
+  }else{
+    feedbackBanner.textContent = `MISS · 정답은 "${currentChar.name}"`;
+  }
+  resultsBox.innerHTML = '';
+  searchInput.blur();
+}
+
+function scheduleNext(){
+  setTimeout(() => {
+    advanceRound();
+  }, 1600);
+}
+
+function advanceRound(){
+  roundIndex++;
+  if(roundIndex >= ROUND_COUNT){
+    showEndScreen();
+  }else{
+    startRound();
+  }
+}
+
+/* ======================================================
+   검색
+   ====================================================== */
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim();
+  if(!q){ resultsBox.innerHTML=''; return; }
+  const matches = charData.filter(c => c.name.includes(q)).slice(0, 9);
+  resultsBox.innerHTML = '';
+  matches.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.innerHTML = `<img src="${spriteUrl(c.id)}" onerror="this.style.opacity=0.15"><span>${c.name}</span>`;
+    card.addEventListener('click', () => submitAnswer(c.id));
+    resultsBox.appendChild(card);
+  });
+});
+
+/* ======================================================
+   확대(범위 확장) 버튼
+   ====================================================== */
+zoomBtn.addEventListener('click', () => {
+  if(!roundActive || zoomLevel >= MAX_ZOOM_USE) return;
+  zoomLevel++;
+  renderCrop();
+  renderZoomDots();
+  readout.textContent = zoomLevel >= 3 ? 'Full View' : 'Range Expanded';
+});
+
+/* ======================================================
+   종료 화면
+   ====================================================== */
+function showEndScreen(){
+  gameScreen.classList.add('hidden');
+  endScreen.classList.remove('hidden');
+  roundList.innerHTML = '';
+  roundResults.forEach(r => {
+    const item = document.createElement('div');
+    item.className = 'round-item';
+    item.innerHTML = `
+      <div class="rname">
+        <span class="tag ${r.correct ? 'o':'x'}">${r.correct ? 'HIT':'MISS'}</span>
+        ${r.char.name}
+      </div>
+      <div class="rscore mono">${r.score}</div>
+    `;
+    roundList.appendChild(item);
+  });
+
+  // 점수 카운트업 연출
+  const target = totalScore;
+  const start = performance.now();
+  const dur = 700;
+  function tick(now){
+    const p = Math.min(1, (now-start)/dur);
+    const eased = 1 - Math.pow(1-p, 3);
+    endTotal.textContent = Math.round(target*eased);
+    if(p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+replayBtn.addEventListener('click', startGame);
+
+/* ======================================================
+   시작
+   ====================================================== */
+startGame();
+</script>
 </body>
 </html>
